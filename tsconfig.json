@@ -1,0 +1,9 @@
+{
+  // Arquivo principal de configuração do TypeScript
+  // Ele delega as configurações específicas para tsconfig.app.json e tsconfig.node.json
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
