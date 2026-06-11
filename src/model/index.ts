@@ -52,7 +52,7 @@ export interface Matricula {
 }
 
 export interface ProgressoAula {
-  id: string; // Fake ID for json-server since composite keys aren't well supported
+  id: string; 
   idUsuario: string;
   idAula: string;
   dataConclusao: string;
@@ -76,7 +76,7 @@ export interface Trilha {
 }
 
 export interface TrilhaCurso {
-  id: string; // Fake ID for json-server
+  id: string;
   idTrilha: string;
   idCurso: string;
   ordem: number;
