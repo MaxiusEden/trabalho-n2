@@ -67,6 +67,16 @@ export const Sidebar = () => {
                 <BookOpenCheck size={18} /> Cursos
               </Link>
             </li>
+            <li className="nav-item mb-1">
+              <Link to="/admin/trilhas" className={`nav-link text-info d-flex align-items-center gap-2 ${isActive('/admin/trilhas')}`}>
+                <Map size={18} /> Trilhas
+              </Link>
+            </li>
+            <li className="nav-item mb-1">
+              <Link to="/admin/assinaturas" className={`nav-link text-info d-flex align-items-center gap-2 ${isActive('/admin/assinaturas')}`}>
+                <CreditCard size={18} /> Assinaturas
+              </Link>
+            </li>
           </>
         )}
       </ul>

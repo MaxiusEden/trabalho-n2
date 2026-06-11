@@ -6,6 +6,7 @@ export const Register = () => {
   const [nomeCompleto, setNomeCompleto] = useState('');
   const [email, setEmail] = useState('');
   const [senhaHash, setSenhaHash] = useState('');
+  const [role, setRole] = useState<'admin' | 'aluno'>('aluno');
   const [error, setError] = useState('');
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -23,7 +24,7 @@ export const Register = () => {
         email,
         senhaHash, // in a real app this would be hashed
         dataCadastro: new Date().toISOString().split('T')[0],
-        role: 'aluno'
+        role
       });
 
       // auto login
@@ -53,9 +54,16 @@ export const Register = () => {
                   <label className="form-label">E-mail</label>
                   <input type="email" className="form-control" value={email} onChange={e => setEmail(e.target.value)} required />
                 </div>
-                <div className="mb-4">
+                <div className="mb-3">
                   <label className="form-label">Senha</label>
                   <input type="password" className="form-control" value={senhaHash} onChange={e => setSenhaHash(e.target.value)} required />
+                </div>
+                <div className="mb-4">
+                  <label className="form-label">Tipo de Conta</label>
+                  <select className="form-select" value={role} onChange={e => setRole(e.target.value as 'admin' | 'aluno')}>
+                    <option value="aluno">Aluno</option>
+                    <option value="admin">Admin</option>
+                  </select>
                 </div>
                 <button type="submit" className="btn btn-primary w-100 mb-3">Registrar</button>
                 <div className="text-center">

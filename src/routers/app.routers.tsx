@@ -10,7 +10,10 @@ import { Checkout } from "../pages/Checkout";
 import { ManageCategories } from "../pages/admin/ManageCategories";
 import { ManageCourses } from "../pages/admin/ManageCourses";
 import { ManageModulesAndClasses } from "../pages/admin/ManageModulesAndClasses";
+import { ManageTrails } from "../pages/admin/ManageTrails";
+import { ManageSubscriptions } from "../pages/admin/ManageSubscriptions";
 import { AdminRoute } from "../components/guards/AdminRoute";
+import { TrilhaDetails } from "../pages/TrilhaDetails";
 
 export const AppRouter = () => {
   return (
@@ -19,6 +22,7 @@ export const AppRouter = () => {
       <Route path="/cursos" element={<Cursos />} />
       <Route path="/curso/:id" element={<CourseDetails />} />
       <Route path="/trilhas" element={<Trilhas />} />
+      <Route path="/trilha/:id" element={<TrilhaDetails />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<MyProgress />} />
@@ -28,6 +32,8 @@ export const AppRouter = () => {
       <Route path="/admin/categorias" element={<AdminRoute><ManageCategories /></AdminRoute>} />
       <Route path="/admin/cursos" element={<AdminRoute><ManageCourses /></AdminRoute>} />
       <Route path="/admin/cursos/:id/modulos" element={<AdminRoute><ManageModulesAndClasses /></AdminRoute>} />
+      <Route path="/admin/trilhas" element={<AdminRoute><ManageTrails /></AdminRoute>} />
+      <Route path="/admin/assinaturas" element={<AdminRoute><ManageSubscriptions /></AdminRoute>} />
     </Routes>
   );
 };

@@ -27,7 +27,7 @@ export const Trilhas = () => {
               <div className="card-body">
                 <h4 className="card-title text-primary">{trilha.titulo}</h4>
                 <p className="card-text">{trilha.descricao}</p>
-                <Link to="/" className="btn btn-outline-primary w-100">
+                <Link to={`/trilha/${trilha.id}`} className="btn btn-outline-primary w-100">
                   Explorar Trilha
                 </Link>
               </div>
