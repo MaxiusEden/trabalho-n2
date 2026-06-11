@@ -20,6 +20,14 @@ export function Cursos() {
       </div>
 
       <div className="row g-4">
+        {cursos.length === 0 ? (
+          <div className="col-12">
+            <div className="alert alert-info">
+              Nenhum curso cadastrado ainda. Crie uma categoria e um curso na área administrativa.
+            </div>
+          </div>
+        ) : null}
+
         {cursos.map(course => (
           <div key={course.id} className="col-12 col-md-6 col-lg-4">
             <div className="card h-100 shadow-sm">

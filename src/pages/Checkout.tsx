@@ -127,6 +127,14 @@ export const Checkout = () => {
       <h2 className="mb-4">Escolha seu Plano</h2>
 
       <div className="row g-4 mb-5">
+        {planos.length === 0 ? (
+          <div className="col-12">
+            <div className="alert alert-info">
+              Nenhum plano cadastrado ainda. Um administrador precisa criar um plano de assinatura.
+            </div>
+          </div>
+        ) : null}
+
         {planos.map(plano => (
           <div className="col-md-6" key={plano.id}>
             <div

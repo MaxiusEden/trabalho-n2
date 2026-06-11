@@ -55,6 +55,11 @@ export const ManageTrails = () => {
 
   const handleCreateTrilha = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!idCategoria) {
+      alert('Cadastre uma categoria antes de criar uma trilha.');
+      return;
+    }
+
     await cursoService.createTrilha({ titulo, descricao, idCategoria });
     setTitulo('');
     setDescricao('');
@@ -64,7 +69,10 @@ export const ManageTrails = () => {
 
   const handleCreateVinculo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeTrilhaId || !idCurso) return;
+    if (!activeTrilhaId || !idCurso) {
+      alert('Cadastre um curso antes de vincular cursos a uma trilha.');
+      return;
+    }
 
     const vinculoExistente = vinculos.find(
       vinculo => String(vinculo.idTrilha) === String(activeTrilhaId) && String(vinculo.idCurso) === String(idCurso)
@@ -105,6 +113,7 @@ export const ManageTrails = () => {
           className="btn btn-sm btn-outline-primary"
           data-bs-toggle="modal"
           data-bs-target="#vinculoModal"
+          disabled={cursos.length === 0}
           onClick={() => {
             const quantidadeCursos = vinculos.filter(vinculo => String(vinculo.idTrilha) === String(row.id)).length;
             setActiveTrilhaId(row.id);
@@ -121,10 +130,21 @@ export const ManageTrails = () => {
     <div className="container-fluid py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestão de Trilhas</h2>
-        <button className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#trilhaModal">
+        <button
+          className="btn btn-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#trilhaModal"
+          disabled={categorias.length === 0}
+        >
           Nova Trilha
         </button>
       </div>
+
+      {categorias.length === 0 ? (
+        <div className="alert alert-warning">
+          Cadastre uma categoria antes de criar trilhas.
+        </div>
+      ) : null}
 
       <Card>
         <Table columns={columns} data={trilhas} keyExtractor={trilha => trilha.id} />

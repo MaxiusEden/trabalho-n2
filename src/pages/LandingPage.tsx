@@ -81,6 +81,14 @@ export const LandingPage = () => {
             <p className="text-muted">Comece sua jornada com nossos cursos mais populares</p>
           </div>
           <div className="row g-4">
+            {destaques.length === 0 ? (
+              <div className="col-12">
+                <div className="alert alert-info text-center mb-0">
+                  Nenhum curso cadastrado ainda.
+                </div>
+              </div>
+            ) : null}
+
             {destaques.map(curso => (
               <div key={curso.id} className="col-md-6 col-lg-4">
                 <div className="card h-100 shadow-sm border-0">
@@ -116,6 +124,14 @@ export const LandingPage = () => {
             <p className="text-muted">Siga um caminho estruturado e domine uma área completa</p>
           </div>
           <div className="row g-4">
+            {trilhas.length === 0 ? (
+              <div className="col-12">
+                <div className="alert alert-info text-center mb-0">
+                  Nenhuma trilha cadastrada ainda.
+                </div>
+              </div>
+            ) : null}
+
             {trilhas.map(trilha => (
               <div key={trilha.id} className="col-md-4">
                 <div className="card h-100 border-0 shadow-sm text-center p-4">
@@ -125,7 +141,7 @@ export const LandingPage = () => {
                     </div>
                     <h5 className="card-title">{trilha.titulo}</h5>
                     <p className="card-text text-muted">{trilha.descricao}</p>
-                    <Link to="/trilhas" className="btn btn-outline-primary">
+                    <Link to={`/trilha/${trilha.id}`} className="btn btn-outline-primary">
                       Ver Trilha
                     </Link>
                   </div>

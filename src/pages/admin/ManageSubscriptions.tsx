@@ -114,11 +114,22 @@ export const ManageSubscriptions = () => {
           <button className="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#planoModal">
             Novo Plano
           </button>
-          <button className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assinaturaModal">
+          <button
+            className="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#assinaturaModal"
+            disabled={usuarios.length === 0 || planos.length === 0}
+          >
             Nova Assinatura
           </button>
         </div>
       </div>
+
+      {usuarios.length === 0 || planos.length === 0 ? (
+        <div className="alert alert-warning">
+          Para criar uma assinatura manualmente, cadastre pelo menos um usuário e um plano.
+        </div>
+      ) : null}
 
       <div className="row g-4">
         <div className="col-12">

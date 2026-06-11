@@ -36,6 +36,11 @@ export const ManageCourses = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!idCategoria) {
+      alert('Cadastre uma categoria antes de criar um curso.');
+      return;
+    }
+
     const novoCurso = {
       titulo,
       descricao,
@@ -71,10 +76,21 @@ export const ManageCourses = () => {
     <div className="container-fluid py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestão de Cursos</h2>
-        <button className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#cursoModal">
+        <button
+          className="btn btn-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#cursoModal"
+          disabled={categorias.length === 0}
+        >
           Novo Curso
         </button>
       </div>
+
+      {categorias.length === 0 ? (
+        <div className="alert alert-warning">
+          Cadastre uma categoria antes de criar cursos.
+        </div>
+      ) : null}
 
       <Card>
         <Table columns={columns} data={cursos} keyExtractor={(c) => c.id} />
