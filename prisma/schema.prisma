@@ -1,0 +1,89 @@
+// Perero Cursos — modelagem do banco
+//
+// A entidade `User` segue exatamente a especificação do PDF (CRUD - NestJS):
+// id autoincremento, email único, name opcional, password, createdAt e updateAt.
+// As demais entidades foram extraídas da plataforma de cursos (trabalho-n2):
+// Trilha, Course, Lesson e Enrollment.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// Usuário da plataforma. Espelha o `model User` definido no PDF.
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updateAt  DateTime @updatedAt
+
+  enrollments Enrollment[]
+}
+
+/// Trilha de aprendizado. Agrupa cursos (`Trilhas.tsx`).
+/// O contador de módulos exibido na UI é derivado de `courses`, nunca armazenado,
+/// para não existir estado inconsistente entre o contador e os cursos reais.
+model Trilha {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses Course[]
+}
+
+/// Curso ofertado (`Home.tsx` / `CourseDetails.tsx`).
+/// O preço é guardado em centavos para evitar erro de arredondamento de ponto flutuante.
+model Course {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  image       String
+  priceCents  Int
+  trilhaId    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  trilha      Trilha?      @relation(fields: [trilhaId], references: [id], onDelete: SetNull)
+  lessons     Lesson[]
+  enrollments Enrollment[]
+
+  @@index([trilhaId])
+}
+
+/// Aula do conteúdo programático de um curso (`CourseDetails.tsx`).
+model Lesson {
+  id       Int    @id @default(autoincrement())
+  title    String
+  duration Int // duração em minutos
+  order    Int // posição da aula dentro do curso
+  courseId Int
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, order])
+  @@index([courseId])
+}
+
+/// Matrícula de um usuário em um curso (botão "Matricular-se Agora").
+model Enrollment {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  courseId  Int
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+}

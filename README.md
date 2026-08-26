@@ -1,73 +1,97 @@
-# React + TypeScript + Vite
+# Perero Cursos — CRUD em Next.js + Prisma
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Plataforma de cursos (`trabalho-n2`) reescrita em Next.js (App Router) com persistência real
+via Prisma. O CRUD segue a estrutura do PDF *CRUD - NestJS*, com cada camada do NestJS
+traduzida para o equivalente do Next.js.
 
-Currently, two official plugins are available:
+| PDF (NestJS)                          | Aqui (Next.js)                                        |
+| ------------------------------------- | ----------------------------------------------------- |
+| `PrismaService`                       | [`src/lib/prisma.ts`](src/lib/prisma.ts) (singleton)   |
+| DTOs com `class-validator`            | `src/lib/<recurso>/dto/*.dto.ts`                       |
+| `ValidationPipe` global               | [`validateDto`](src/lib/http/validation.ts)            |
+| `UsersService`                        | `src/lib/<recurso>/*.service.ts`                       |
+| `UsersController` (REST)              | Route Handlers em `src/app/api/**/route.ts`            |
+| Swagger em `/api`                     | Documentação da API em `/api`                          |
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Como rodar
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run setup
 ```
+
+`setup` aplica as migrations, gera o Prisma Client e popula o banco. Depois:
+
+```bash
+npm run dev
+```
+
+A aplicação sobe em <http://localhost:3000>.
+
+O banco é um **SQLite em arquivo** (`prisma/dev.db`) — não precisa de servidor de banco,
+Docker nem nenhum outro programa externo. A conexão fica em `.env`:
+
+```
+DATABASE_URL="file:./prisma/dev.db"
+```
+
+### Usuários semeados
+
+| E-mail             | Senha      |
+| ------------------ | ---------- |
+| `aluno@perero.com` | `senha123` |
+| `joao@email.com`   | `senha123` |
+
+## Scripts
+
+| Script               | O que faz                                          |
+| -------------------- | -------------------------------------------------- |
+| `npm run dev`        | Servidor de desenvolvimento                        |
+| `npm run build`      | Build de produção                                  |
+| `npm start`          | Sobe o build de produção                           |
+| `npm run typecheck`  | `tsc --noEmit`                                     |
+| `npm run lint`       | ESLint                                             |
+| `npm run db:migrate` | Cria/aplica migrations (`prisma migrate dev`)      |
+| `npm run db:seed`    | Popula o banco                                     |
+| `npm run db:reset`   | Apaga o banco, reaplica as migrations e re-semeia  |
+| `npm run db:studio`  | Abre o Prisma Studio                               |
+
+## Telas
+
+| Rota                  | O que é                                                          |
+| --------------------- | ---------------------------------------------------------------- |
+| `/`                   | Catálogo de cursos                                               |
+| `/curso/[id]`         | Detalhe do curso, conteúdo programático e matrícula              |
+| `/trilhas`            | Trilhas de aprendizado                                           |
+| `/trilhas/[id]`       | Cursos de uma trilha                                             |
+| `/login`              | Login conferido contra a tabela `User`                           |
+| `/admin/usuarios`     | CRUD de usuários                                                 |
+| `/admin/cursos`       | CRUD de cursos, com trilha e aulas                               |
+| `/admin/trilhas`      | CRUD de trilhas                                                  |
+| `/admin/matriculas`   | CRUD de matrículas                                               |
+| `/api`                | Documentação da API                                              |
+
+## Modelo de dados
+
+```
+User 1──n Enrollment n──1 Course n──1 Trilha
+                              │
+                              └──n Lesson
+```
+
+- `User.email` é único.
+- `Enrollment` tem índice único em `(userId, courseId)` — o banco impede matrícula duplicada.
+- `Lesson` tem índice único em `(courseId, order)`; a ordem vem da posição no formulário.
+- Apagar um curso apaga aulas e matrículas em cascata.
+- Apagar uma trilha **não** apaga os cursos: eles ficam com `trilhaId = null`.
+- O "Módulos: N" das trilhas é derivado da contagem de cursos, nunca armazenado.
+
+## Observação de segurança
+
+Seguindo o PDF, a senha é gravada **em texto puro** (`data: createUserDto`). Ela nunca é
+devolvida pela API, mas antes de usar isso para valer o `password` precisa passar por hash.
+O login também é apenas uma conferência de credenciais: não emite cookie de sessão nem
+token, e as rotas de `/admin` e da API não são protegidas.

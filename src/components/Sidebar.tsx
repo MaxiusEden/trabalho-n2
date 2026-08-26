@@ -1,105 +1,68 @@
-import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Home, Map, User, CreditCard, FolderOpen, BookOpenCheck, LogOut, LogIn, LayoutDashboard } from 'lucide-react';
-import { isAdmin, getLoggedUser } from '../services/api';
+'use client';
 
-export const Sidebar = () => {
-  const user = getLoggedUser();
-  const showAdmin = isAdmin();
-  const location = useLocation();
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-  const isActive = (path: string) => location.pathname === path ? 'active' : '';
+interface SidebarProps {
+  isOpen: boolean;
+}
+
+const NAV = [
+  { href: '/', label: 'Home' },
+  { href: '/trilhas', label: 'Trilhas' },
+] as const;
+
+const ADMIN_NAV = [
+  { href: '/admin/usuarios', label: 'Usuários' },
+  { href: '/admin/cursos', label: 'Cursos' },
+  { href: '/admin/trilhas', label: 'Trilhas' },
+  { href: '/admin/matriculas', label: 'Matrículas' },
+] as const;
+
+export const Sidebar = ({ isOpen }: SidebarProps) => {
+  const pathname = usePathname();
+
+  const linkClass = (href: string) =>
+    `nav-link text-white ${pathname === href ? 'active' : ''}`;
 
   return (
-    <div className="d-flex flex-column bg-dark p-3 text-white vh-100 flex-shrink-0" style={{ width: '250px' }}>
-      {/* Logo / Título */}
-      <Link to="/" className="d-flex align-items-center gap-2 text-white text-decoration-none mb-4 px-2">
-        <BookOpen size={28} />
-        <span className="fs-4 fw-bold">Perero Cursos</span>
-      </Link>
+    <div
+      className={`d-flex flex-column bg-dark p-3 text-white vh-100 overflow-auto ${isOpen ? '' : 'd-none'}`}
+      style={{ width: '250px', minWidth: '250px' }}
+    >
+      <h4 className="text-center mb-4">Painel</h4>
 
-      <hr className="my-0 mb-3" />
-
-      {/* Navegação Principal */}
-      <ul className="nav nav-pills flex-column mb-auto">
-        <li className="nav-item mb-1">
-          <Link to="/" className={`nav-link text-white d-flex align-items-center gap-2 ${isActive('/')}`}>
-            <Home size={18} /> Início
-          </Link>
-        </li>
-        <li className="nav-item mb-1">
-          <Link to="/cursos" className={`nav-link text-white d-flex align-items-center gap-2 ${isActive('/cursos')}`}>
-            <LayoutDashboard size={18} /> Cursos
-          </Link>
-        </li>
-        <li className="nav-item mb-1">
-          <Link to="/trilhas" className={`nav-link text-white d-flex align-items-center gap-2 ${isActive('/trilhas')}`}>
-            <Map size={18} /> Trilhas
-          </Link>
-        </li>
-
-        {user && (
-          <>
-            <hr className="my-2" />
-            <li className="nav-item mb-1">
-              <Link to="/dashboard" className={`nav-link text-warning d-flex align-items-center gap-2 ${isActive('/dashboard')}`}>
-                <User size={18} /> Área do Aluno
-              </Link>
-            </li>
-            <li className="nav-item mb-1">
-              <Link to="/checkout" className={`nav-link text-white d-flex align-items-center gap-2 ${isActive('/checkout')}`}>
-                <CreditCard size={18} /> Minha Assinatura
-              </Link>
-            </li>
-          </>
-        )}
-
-        {showAdmin && (
-          <>
-            <hr className="my-2" />
-            <small className="text-muted d-block mb-2 px-3 text-uppercase" style={{ fontSize: '0.7rem', letterSpacing: '0.1em' }}>Administração</small>
-            <li className="nav-item mb-1">
-              <Link to="/admin/categorias" className={`nav-link text-info d-flex align-items-center gap-2 ${isActive('/admin/categorias')}`}>
-                <FolderOpen size={18} /> Categorias
-              </Link>
-            </li>
-            <li className="nav-item mb-1">
-              <Link to="/admin/cursos" className={`nav-link text-info d-flex align-items-center gap-2 ${isActive('/admin/cursos')}`}>
-                <BookOpenCheck size={18} /> Cursos
-              </Link>
-            </li>
-            <li className="nav-item mb-1">
-              <Link to="/admin/trilhas" className={`nav-link text-info d-flex align-items-center gap-2 ${isActive('/admin/trilhas')}`}>
-                <Map size={18} /> Trilhas
-              </Link>
-            </li>
-            <li className="nav-item mb-1">
-              <Link to="/admin/assinaturas" className={`nav-link text-info d-flex align-items-center gap-2 ${isActive('/admin/assinaturas')}`}>
-                <CreditCard size={18} /> Assinaturas
-              </Link>
-            </li>
-          </>
-        )}
+      <ul className="nav nav-pills flex-column mb-3">
+        {NAV.map((item) => (
+          <li key={item.href} className="nav-item mb-2">
+            <Link href={item.href} className={linkClass(item.href)}>
+              {item.label}
+            </Link>
+          </li>
+        ))}
       </ul>
 
-      {/* Footer: Login / Logout */}
+      <hr />
+
+      <h6 className="text-uppercase text-white-50 small px-2">Administração</h6>
+      <ul className="nav nav-pills flex-column mb-auto">
+        {ADMIN_NAV.map((item) => (
+          <li key={item.href} className="nav-item mb-2">
+            <Link href={item.href} className={linkClass(item.href)}>
+              {item.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+
       <hr />
       <div>
-        {user ? (
-          <button
-            className="nav-link text-white bg-transparent border-0 w-100 text-start d-flex align-items-center gap-2"
-            onClick={() => {
-              localStorage.removeItem('loggedUser');
-              window.location.href = '/login';
-            }}
-          >
-            <LogOut size={18} />
-            Sair ({user.nomeCompleto})
-          </button>
-        ) : (
-          <Link to="/login" className="nav-link text-white d-flex align-items-center gap-2">
-            <LogIn size={18} /> Login
-          </Link>
-        )}
+        <Link href="/api" className="nav-link text-white">
+          Documentação da API
+        </Link>
+        <Link href="/login" className="nav-link text-white">
+          Login
+        </Link>
       </div>
     </div>
   );

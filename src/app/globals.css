@@ -1,0 +1,16 @@
+/* O visual vem do Bootstrap 5, como no projeto original (trabalho-n2). */
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+/* Mantém a imagem de capa dos cursos com proporção estável entre os cards. */
+.course-cover {
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
