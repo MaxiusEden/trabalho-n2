@@ -94,12 +94,12 @@ export function UsersManager({ users }: { users: AdminUser[] }) {
 
   return (
     <div className="row g-4">
-      <div className="col-12 col-lg-4">
-        <div className="card shadow-sm">
+      <div className="col-12 col-xl-4">
+        <div className="card">
           <div className="card-body">
-            <h5 className="card-title mb-3">
+            <h2 className="h5 card-title mb-3">
               {editingId === null ? 'Novo usuário' : `Editando usuário #${editingId}`}
-            </h5>
+            </h2>
 
             <FormErrors messages={errors} />
 
@@ -162,39 +162,36 @@ export function UsersManager({ users }: { users: AdminUser[] }) {
         </div>
       </div>
 
-      <div className="col-12 col-lg-8">
+      <div className="col-12 col-xl-8">
         {notice && <div className="alert alert-success">{notice}</div>}
 
-        <div className="card shadow-sm">
+        <div className="card">
           <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">
+            <table className="table table-hover table-stack align-middle mb-0">
+              <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Nome</th>
-                  <th>E-mail</th>
-                  <th>Matrículas</th>
-                  <th>Criado em</th>
-                  <th>Atualizado em</th>
+                  <th>Usuário</th>
                   <th className="text-end">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center text-muted py-4">
+                    <td colSpan={2} className="text-center text-muted py-4">
                       Nenhum usuário cadastrado.
                     </td>
                   </tr>
                 ) : (
                   users.map((user) => (
                     <tr key={user.id}>
-                      <td>{user.id}</td>
-                      <td>{user.name ?? <span className="text-muted">—</span>}</td>
-                      <td>{user.email}</td>
-                      <td>{user._count?.enrollments ?? 0}</td>
-                      <td className="small text-muted">{formatDate(user.createdAt)}</td>
-                      <td className="small text-muted">{formatDate(user.updateAt)}</td>
+                      <td>
+                        {user.name ?? <span className="text-muted">Sem nome</span>}
+                        <div className="small text-muted text-break">{user.email}</div>
+                        <div className="small text-muted">
+                          #{user.id} · {user._count?.enrollments ?? 0} matrícula(s) · criado em{' '}
+                          {formatDate(user.createdAt)} · atualizado em {formatDate(user.updateAt)}
+                        </div>
+                      </td>
                       <td className="text-end text-nowrap">
                         <Link
                           href={`/admin/matriculas?userId=${user.id}`}

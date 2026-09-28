@@ -64,7 +64,7 @@ const RESOURCES: Resource[] = [
   {
     tag: 'trilhas',
     description:
-      'CRUD de trilhas de aprendizado. O total de módulos vem de `_count.courses` e não é editável.',
+      'CRUD de trilhas de aprendizado. O total de cursos vem de `_count.courses` e não é editável.',
     endpoints: [
       {
         method: 'POST',
@@ -175,7 +175,7 @@ const RESOURCES: Resource[] = [
 const METHOD_CLASS: Record<Endpoint['method'], string> = {
   GET: 'bg-primary',
   POST: 'bg-success',
-  PATCH: 'bg-warning text-dark',
+  PATCH: 'bg-warning',
   DELETE: 'bg-danger',
 };
 
@@ -186,8 +186,8 @@ const METHOD_CLASS: Record<Endpoint['method'], string> = {
  */
 export default function ApiDocsPage() {
   return (
-    <div className="container pb-5">
-      <h1 className="h3 text-black">Documentação da API</h1>
+    <div className="container">
+      <h1 className="page-title">Documentação da API</h1>
       <p className="text-muted">
         Perero Cursos API · v1.0 · todas as rotas respondem JSON. Erros seguem o formato{' '}
         <code>{'{ statusCode, message, error }'}</code>, com <code>message</code> podendo ser uma
@@ -196,14 +196,14 @@ export default function ApiDocsPage() {
 
       {RESOURCES.map((resource) => (
         <section key={resource.tag} className="mb-5">
-          <h2 className="h5 text-black border-bottom pb-2">{resource.tag}</h2>
+          <h2 className="h5 border-bottom pb-2">{resource.tag}</h2>
           <p className="text-muted small">{resource.description}</p>
 
           {resource.endpoints.map((endpoint) => (
-            <div key={`${endpoint.method} ${endpoint.path}`} className="card shadow-sm mb-2">
+            <div key={`${endpoint.method} ${endpoint.path}`} className="card mb-2">
               <div className="card-body py-3">
                 <div className="d-flex align-items-center gap-2 flex-wrap">
-                  <span className={`badge ${METHOD_CLASS[endpoint.method]}`}>
+                  <span className={`badge method-badge ${METHOD_CLASS[endpoint.method]}`}>
                     {endpoint.method}
                   </span>
                   <code className="fs-6">{endpoint.path}</code>
@@ -211,14 +211,14 @@ export default function ApiDocsPage() {
                 </div>
 
                 {endpoint.body && (
-                  <pre className="bg-light border rounded p-2 mt-2 mb-2 small overflow-auto">
+                  <pre className="tag--neutral rounded p-2 mt-2 mb-2 small overflow-auto">
                     <code>{endpoint.body}</code>
                   </pre>
                 )}
 
                 <div className="d-flex gap-2 flex-wrap mt-2">
                   {endpoint.responses.map((response) => (
-                    <span key={response} className="badge bg-light text-dark border">
+                    <span key={response} className="tag tag--neutral">
                       {response}
                     </span>
                   ))}

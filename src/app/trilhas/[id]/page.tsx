@@ -3,11 +3,12 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { trilhasService } from '@/lib/trilhas/trilhas.service';
 import { NotFoundError } from '@/lib/http/errors';
-import { formatPrice } from '@/lib/format';
+import { CourseCard } from '@/components/CourseCard';
+import { EmptyState } from '@/components/EmptyState';
 
 export const dynamic = 'force-dynamic';
 
-/** Cursos que compõem uma trilha — destino do botão "Explorar Trilha". */
+/** Cursos que compõem uma trilha — destino do card da página de trilhas. */
 export default async function TrilhaDetailsPage({ params }: PageProps<'/trilhas/[id]'>) {
   const { id } = await params;
   const trilhaId = Number(id);
@@ -18,47 +19,33 @@ export default async function TrilhaDetailsPage({ params }: PageProps<'/trilhas/
     throw error;
   });
 
-  return (
-    <div className="container pb-5">
-      <div className="mb-4">
-        <Link
-          href="/trilhas"
-          className="text-decoration-none d-inline-flex align-items-center gap-2"
-        >
-          <ArrowLeft size={20} />
-          Voltar para as trilhas
-        </Link>
-      </div>
+  const total = trilha._count.courses;
 
-      <h1 className="display-5 text-black">{trilha.title}</h1>
-      <p className="lead text-muted">{trilha.description}</p>
-      <p className="fw-bold">Módulos: {trilha._count.courses}</p>
+  return (
+    <div className="container">
+      <Link href="/trilhas" className="back-link">
+        <ArrowLeft size={16} aria-hidden="true" />
+        Todas as trilhas
+      </Link>
+
+      <header className="page-header">
+        <h1 className="page-title">{trilha.title}</h1>
+        <p className="page-lead">{trilha.description}</p>
+        <p className="page-meta">
+          {total} {total === 1 ? 'curso' : 'cursos'}
+        </p>
+      </header>
 
       {trilha.courses.length === 0 ? (
-        <div className="alert alert-info mt-4">
-          Esta trilha ainda não tem cursos vinculados. Vincule cursos em{' '}
+        <EmptyState>
+          Esta trilha ainda não tem cursos. Vincule cursos em{' '}
           <Link href="/admin/cursos">Administração → Cursos</Link>.
-        </div>
+        </EmptyState>
       ) : (
-        <div className="row g-4 mt-1">
+        <div className="row g-4">
           {trilha.courses.map((course) => (
             <div key={course.id} className="col-12 col-md-6 col-lg-4">
-              <div className="card h-100 shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element -- a capa é uma URL livre cadastrada pelo admin */}
-                <img src={course.image} className="card-img-top course-cover" alt={course.title} />
-                <div className="card-body d-flex flex-column">
-                  <h5 className="card-title">{course.title}</h5>
-                  <p className="card-text">{course.description}</p>
-                  <div className="mt-auto d-flex justify-content-between align-items-center">
-                    <span className="fw-bold fs-5 text-success">
-                      {formatPrice(course.priceCents)}
-                    </span>
-                    <Link href={`/curso/${course.id}`} className="btn btn-primary">
-                      Ver Detalhes
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              <CourseCard course={course} />
             </div>
           ))}
         </div>

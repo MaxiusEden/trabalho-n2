@@ -36,81 +36,73 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-4">
-          <div className="card shadow-sm">
-            <div className="card-body p-4">
-              <h2 className="text-center text-black mb-4">Acesso</h2>
+    <div className="container">
+      <div className="auth-card mx-auto">
+        <div className="card">
+          <div className="card-body p-4">
+            <h1 className="admin-title mb-1">Entrar</h1>
+            <p className="text-muted small mb-4">Use o e-mail e a senha cadastrados.</p>
 
-              {user ? (
-                <>
-                  <p className="text-center">
-                    Você já está conectado como <strong>{user.name ?? user.email}</strong>.
-                  </p>
-                  <button className="btn btn-outline-danger w-100 mb-3" onClick={signOut}>
-                    Sair
-                  </button>
-                  <div className="text-center">
-                    <Link href="/" className="text-decoration-none">
-                      Voltar para a Home
-                    </Link>
+            {user ? (
+              <>
+                <p>
+                  Você já está conectado como <strong>{user.name ?? user.email}</strong>.
+                </p>
+                <button className="btn btn-outline-secondary w-100 mb-3" onClick={signOut}>
+                  Sair
+                </button>
+                <Link href="/" className="small">
+                  Ver os cursos
+                </Link>
+              </>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                {errors.length > 0 && (
+                  <div className="alert alert-danger">
+                    <ul className="mb-0 ps-3">
+                      {errors.map((message) => (
+                        <li key={message}>{message}</li>
+                      ))}
+                    </ul>
                   </div>
-                </>
-              ) : (
-                <form onSubmit={handleSubmit}>
-                  {errors.length > 0 && (
-                    <div className="alert alert-danger">
-                      <ul className="mb-0 ps-3">
-                        {errors.map((message) => (
-                          <li key={message}>{message}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                )}
 
-                  <div className="mb-3">
-                    <label className="form-label" htmlFor="login-email">
-                      E-mail
-                    </label>
-                    <input
-                      id="login-email"
-                      type="email"
-                      className="form-control"
-                      placeholder="Seu e-mail"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      required
-                    />
-                  </div>
+                <div className="mb-3">
+                  <label className="form-label" htmlFor="login-email">
+                    E-mail
+                  </label>
+                  <input
+                    id="login-email"
+                    type="email"
+                    className="form-control"
+                    placeholder="nome@email.com"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                  />
+                </div>
 
-                  <div className="mb-3">
-                    <label className="form-label" htmlFor="login-password">
-                      Senha
-                    </label>
-                    <input
-                      id="login-password"
-                      type="password"
-                      className="form-control"
-                      placeholder="Sua senha"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      required
-                    />
-                  </div>
+                <div className="mb-3">
+                  <label className="form-label" htmlFor="login-password">
+                    Senha
+                  </label>
+                  <input
+                    id="login-password"
+                    type="password"
+                    className="form-control"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                  />
+                </div>
 
-                  <button type="submit" className="btn btn-primary w-100 mb-3" disabled={busy}>
-                    {busy ? 'Entrando...' : 'Entrar'}
-                  </button>
-
-                  <div className="text-center">
-                    <Link href="/" className="text-decoration-none">
-                      Voltar para a Home
-                    </Link>
-                  </div>
-                </form>
-              )}
-            </div>
+                <button type="submit" className="btn btn-primary w-100" disabled={busy}>
+                  {busy ? 'Entrando...' : 'Entrar'}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

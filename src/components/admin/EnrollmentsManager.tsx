@@ -86,10 +86,10 @@ export function EnrollmentsManager({
 
   return (
     <div className="row g-4">
-      <div className="col-12 col-lg-4">
-        <div className="card shadow-sm">
+      <div className="col-12 col-xl-4">
+        <div className="card">
           <div className="card-body">
-            <h5 className="card-title mb-3">Nova matrícula</h5>
+            <h2 className="h5 card-title mb-3">Nova matrícula</h2>
 
             <FormErrors messages={errors} />
 
@@ -140,42 +140,37 @@ export function EnrollmentsManager({
         </div>
       </div>
 
-      <div className="col-12 col-lg-8">
+      <div className="col-12 col-xl-8">
         {notice && <div className="alert alert-success">{notice}</div>}
 
-        <div className="card shadow-sm">
+        <div className="card">
           <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">
+            <table className="table table-hover table-stack align-middle mb-0">
+              <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Usuário</th>
-                  <th>Curso</th>
-                  <th>Valor</th>
-                  <th>Data</th>
+                  <th>Matrícula</th>
                   <th className="text-end">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {enrollments.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center text-muted py-4">
+                    <td colSpan={2} className="text-center text-muted py-4">
                       Nenhuma matrícula registrada.
                     </td>
                   </tr>
                 ) : (
                   enrollments.map((enrollment) => (
                     <tr key={enrollment.id}>
-                      <td>{enrollment.id}</td>
                       <td>
-                        {enrollment.user.name ?? enrollment.user.email}
-                        <div className="small text-muted">{enrollment.user.email}</div>
+                        {enrollment.user.name ?? enrollment.user.email} em{' '}
+                        <span className="fw-semibold">{enrollment.course.title}</span>
+                        <div className="small text-muted text-break">{enrollment.user.email}</div>
+                        <div className="small text-muted">
+                          #{enrollment.id} · {formatPrice(enrollment.course.priceCents)} ·{' '}
+                          {formatDate(enrollment.createdAt)}
+                        </div>
                       </td>
-                      <td>{enrollment.course.title}</td>
-                      <td className="text-success fw-semibold">
-                        {formatPrice(enrollment.course.priceCents)}
-                      </td>
-                      <td className="small text-muted">{formatDate(enrollment.createdAt)}</td>
                       <td className="text-end">
                         <button
                           className="btn btn-sm btn-outline-danger"

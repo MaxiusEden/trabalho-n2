@@ -20,9 +20,9 @@ export default async function AdminMatriculasPage({
   ]);
 
   return (
-    <div className="container-fluid">
-      <h1 className="h3 text-black mb-1">Matrículas</h1>
-      <p className="text-muted">
+    <div>
+      <h1 className="admin-title">Matrículas</h1>
+      <p className="text-muted mb-4">
         Relação entre <code>User</code> e <code>Course</code>. O banco impede a mesma pessoa de se
         matricular duas vezes no mesmo curso.
       </p>

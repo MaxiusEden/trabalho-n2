@@ -9,7 +9,7 @@ import { useSession } from '@/lib/session';
 type Enrollment = { id: number };
 
 /**
- * Botão "Matricular-se Agora". Cria (e cancela) o registro de `Enrollment`,
+ * Botão "Matricular-se". Cria (e cancela) o registro de `Enrollment`,
  * que é a ponta da relação User ↔ Course.
  */
 export function EnrollButton({ courseId }: { courseId: number }) {
@@ -18,10 +18,10 @@ export function EnrollButton({ courseId }: { courseId: number }) {
   if (!user) {
     return (
       <>
-        <Link href="/login" className="btn btn-primary btn-lg w-100 mb-3">
-          Matricular-se Agora
+        <Link href="/login" className="btn btn-primary w-100 mb-2">
+          Matricular-se
         </Link>
-        <p className="small text-muted">Entre com sua conta para se matricular.</p>
+        <p className="small text-muted mb-3">Entre com sua conta para se matricular.</p>
       </>
     );
   }
@@ -92,7 +92,7 @@ function EnrollmentControl({ userId, courseId }: { userId: number; courseId: num
 
   if (!checked) {
     return (
-      <button className="btn btn-primary btn-lg w-100 mb-3" disabled>
+      <button className="btn btn-primary w-100 mb-3" disabled>
         Carregando...
       </button>
     );
@@ -101,8 +101,8 @@ function EnrollmentControl({ userId, courseId }: { userId: number; courseId: num
   return (
     <>
       {enrollmentId === null ? (
-        <button className="btn btn-primary btn-lg w-100 mb-3" onClick={enroll} disabled={busy}>
-          {busy ? 'Matriculando...' : 'Matricular-se Agora'}
+        <button className="btn btn-primary w-100 mb-3" onClick={enroll} disabled={busy}>
+          {busy ? 'Matriculando...' : 'Matricular-se'}
         </button>
       ) : (
         <>

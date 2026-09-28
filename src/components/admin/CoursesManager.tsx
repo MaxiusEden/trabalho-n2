@@ -22,7 +22,11 @@ export type AdminCourse = {
 
 export type TrilhaOption = { id: number; title: string };
 
-type LessonField = { title: string; duration: string };
+/** `key` identifica a linha do formulário; não vai para a API. */
+type LessonField = { key: string; title: string; duration: string };
+
+let lessonKeySeq = 0;
+const newLessonKey = () => `aula-${++lessonKeySeq}`;
 
 const EMPTY_FORM = {
   title: '',
@@ -66,6 +70,7 @@ export function CoursesManager({
     });
     setLessons(
       course.lessons.map((lesson) => ({
+        key: newLessonKey(),
         title: lesson.title,
         duration: String(lesson.duration),
       })),
@@ -167,12 +172,12 @@ export function CoursesManager({
 
   return (
     <div className="row g-4">
-      <div className="col-12 col-lg-5">
-        <div className="card shadow-sm">
+      <div className="col-12 col-xl-5">
+        <div className="card">
           <div className="card-body">
-            <h5 className="card-title mb-3">
+            <h2 className="h5 card-title mb-3">
               {editingId === null ? 'Novo curso' : `Editando curso #${editingId}`}
-            </h5>
+            </h2>
 
             <FormErrors messages={errors} />
 
@@ -215,7 +220,7 @@ export function CoursesManager({
                   className="form-control"
                   value={form.image}
                   onChange={(event) => setForm({ ...form, image: event.target.value })}
-                  placeholder="https://placehold.co/600x400/212529/FFF?text=React"
+                  placeholder="/covers/react.svg"
                 />
               </div>
 
@@ -255,15 +260,19 @@ export function CoursesManager({
                 </div>
               </div>
 
-              <div className="mb-3">
+              <div className="mb-3" role="group" aria-labelledby="course-lessons-label">
                 <div className="d-flex justify-content-between align-items-center mb-2">
-                  <label className="form-label mb-0">Conteúdo programático</label>
+                  <span id="course-lessons-label" className="form-label mb-0">
+                    Conteúdo programático
+                  </span>
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
-                    onClick={() => setLessons([...lessons, { title: '', duration: '' }])}
+                    onClick={() =>
+                      setLessons([...lessons, { key: newLessonKey(), title: '', duration: '' }])
+                    }
                   >
-                    <Plus size={16} />
+                    <Plus size={16} aria-hidden="true" />
                     Aula
                   </button>
                 </div>
@@ -273,7 +282,7 @@ export function CoursesManager({
                 )}
 
                 {lessons.map((lesson, index) => (
-                  <div key={index} className="input-group mb-2">
+                  <div key={lesson.key} className="input-group mb-2">
                     <span className="input-group-text">{index + 1}</span>
                     <input
                       type="text"
@@ -299,7 +308,7 @@ export function CoursesManager({
                       onClick={() => setLessons(lessons.filter((_, i) => i !== index))}
                       aria-label={`Remover aula ${index + 1}`}
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={16} aria-hidden="true" />
                     </button>
                   </div>
                 ))}
@@ -320,45 +329,38 @@ export function CoursesManager({
         </div>
       </div>
 
-      <div className="col-12 col-lg-7">
+      <div className="col-12 col-xl-7">
         {notice && <div className="alert alert-success">{notice}</div>}
 
-        <div className="card shadow-sm">
+        <div className="card">
           <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">
+            <table className="table table-hover table-stack align-middle mb-0">
+              <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Título</th>
-                  <th>Trilha</th>
-                  <th>Preço</th>
-                  <th>Aulas</th>
-                  <th>Matrículas</th>
+                  <th>Curso</th>
+                  <th className="d-none d-sm-table-cell">Preço</th>
                   <th className="text-end">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {courses.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center text-muted py-4">
+                    <td colSpan={3} className="text-center text-muted py-4">
                       Nenhum curso cadastrado.
                     </td>
                   </tr>
                 ) : (
                   courses.map((course) => (
                     <tr key={course.id}>
-                      <td>{course.id}</td>
-                      <td>{course.title}</td>
                       <td>
-                        {course.trilha ? (
-                          course.trilha.title
-                        ) : (
-                          <span className="text-muted">Sem trilha</span>
-                        )}
+                        {course.title}
+                        <div className="small text-muted">
+                          #{course.id} · {course.trilha ? course.trilha.title : 'Sem trilha'} ·{' '}
+                          {course.lessons.length} aula(s) · {course._count.enrollments} matrícula(s)
+                          <span className="d-sm-none"> · {formatPrice(course.priceCents)}</span>
+                        </div>
                       </td>
-                      <td className="text-success fw-semibold">{formatPrice(course.priceCents)}</td>
-                      <td>{course.lessons.length}</td>
-                      <td>{course._count.enrollments}</td>
+                      <td className="price d-none d-sm-table-cell">{formatPrice(course.priceCents)}</td>
                       <td className="text-end text-nowrap">
                         <Link
                           href={`/curso/${course.id}`}

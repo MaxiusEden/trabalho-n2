@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
-  <rect width="600" height="400" fill="#212529"/>
-  <text x="300" y="200" fill="#FFFFFF" font-family="sans-serif" font-size="48" font-weight="700" text-anchor="middle" dominant-baseline="middle">React</text>
+  <rect width="600" height="400" fill="#EFEDE8"/>
+  <rect x="244" y="144" width="112" height="112" rx="8" fill="#1F5F4A"/>
+  <text x="300" y="202" fill="#FFFFFF" font-family="IBM Plex Sans, Segoe UI, sans-serif" font-size="44" font-weight="600" text-anchor="middle" dominant-baseline="middle">Re</text>
 </svg>

@@ -7,9 +7,9 @@ export default async function AdminUsuariosPage() {
   const users = await usersService.findAll();
 
   return (
-    <div className="container-fluid">
-      <h1 className="h3 text-black mb-1">Usuários</h1>
-      <p className="text-muted">
+    <div>
+      <h1 className="admin-title">Usuários</h1>
+      <p className="text-muted mb-4">
         CRUD completo da entidade <code>User</code> — criar, listar, atualizar e excluir.
       </p>
 

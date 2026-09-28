@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Award, Clock, PlayCircle } from 'lucide-react';
+import { ArrowLeft, Award, Clock, Users } from 'lucide-react';
 import { coursesService } from '@/lib/courses/courses.service';
 import { NotFoundError } from '@/lib/http/errors';
 import { formatDuration, formatPrice } from '@/lib/format';
@@ -20,88 +20,75 @@ export default async function CourseDetailsPage({ params }: PageProps<'/curso/[i
   });
 
   const totalMinutes = course.lessons.reduce((sum, lesson) => sum + lesson.duration, 0);
+  const enrolled = course._count.enrollments;
 
   return (
-    <div className="container pb-5">
-      <div className="mb-4">
-        <Link href="/" className="text-decoration-none d-inline-flex align-items-center gap-2">
-          <ArrowLeft size={20} />
-          Voltar para os cursos
-        </Link>
-      </div>
+    <div className="container">
+      <Link href="/" className="back-link">
+        <ArrowLeft size={16} aria-hidden="true" />
+        Todos os cursos
+      </Link>
 
-      <div className="row mb-5">
+      <div className="row g-4 g-lg-5">
         <div className="col-lg-8">
-          {/* eslint-disable-next-line @next/next/no-img-element -- a capa é uma URL livre cadastrada pelo admin */}
-          <img
-            src={course.image}
-            alt={course.title}
-            className="rounded mb-4 course-cover w-100"
-          />
+          <header>
+            {course.trilha && (
+              <p className="mb-2">
+                <Link href={`/trilhas/${course.trilha.id}`} className="tag text-decoration-none">
+                  {course.trilha.title}
+                </Link>
+              </p>
+            )}
+            <h1 className="page-title">{course.title}</h1>
+            <p className="page-lead">{course.description}</p>
+          </header>
 
-          <h1 className="display-5 text-black">{course.title}</h1>
-          {course.trilha && (
-            <p className="mb-2">
-              Parte da{' '}
-              <Link href={`/trilhas/${course.trilha.id}`}>{course.trilha.title}</Link>
-            </p>
-          )}
-          <p className="lead">{course.description}</p>
+          <h2 className="section-title">Conteúdo programático</h2>
+          <p className="text-muted small mb-0">
+            {course.lessons.length} {course.lessons.length === 1 ? 'aula' : 'aulas'} ·{' '}
+            {formatDuration(totalMinutes)} no total
+          </p>
 
-          <h4 className="mt-5 mb-3">Conteúdo Programático</h4>
           {course.lessons.length === 0 ? (
-            <p className="text-muted">Este curso ainda não tem aulas cadastradas.</p>
+            <p className="text-muted mt-3">Este curso ainda não tem aulas cadastradas.</p>
           ) : (
-            <ul className="list-group list-group-flush mb-4">
-              {course.lessons.map((lesson) => (
-                <li
-                  key={lesson.id}
-                  className="list-group-item d-flex justify-content-between align-items-center"
-                >
-                  {lesson.title}
-                  <span className="badge bg-secondary rounded-pill">
-                    {formatDuration(lesson.duration)}
-                  </span>
+            <ol className="lesson-list">
+              {course.lessons.map((lesson, index) => (
+                <li key={lesson.id}>
+                  <span className="lesson-list__index">{index + 1}</span>
+                  <span>{lesson.title}</span>
+                  <span className="lesson-list__duration">{formatDuration(lesson.duration)}</span>
                 </li>
               ))}
-            </ul>
+            </ol>
           )}
         </div>
 
         <div className="col-lg-4">
-          <div className="card shadow-sm sticky-top" style={{ top: '2rem' }}>
+          <aside className="card purchase-card sticky-lg-top" aria-label="Matrícula">
+            {/* eslint-disable-next-line @next/next/no-img-element -- a capa é uma URL livre cadastrada pelo admin */}
+            <img src={course.image} alt="" className="card-img-top course-cover" />
             <div className="card-body">
-              <h3 className="card-title fw-bold text-success mb-3">
-                {formatPrice(course.priceCents)}
-              </h3>
+              <p className="price price--large mb-3">{formatPrice(course.priceCents)}</p>
 
               <EnrollButton courseId={course.id} />
 
-              <hr />
-
-              <ul className="list-unstyled mb-0">
-                <li className="mb-3 d-flex align-items-center gap-2 text-muted">
-                  <Clock size={20} />
-                  <span>Acesso Vitalício</span>
+              <ul className="fact-list">
+                <li>
+                  <Clock size={16} aria-hidden="true" />
+                  Acesso vitalício
                 </li>
-                <li className="mb-3 d-flex align-items-center gap-2 text-muted">
-                  <Award size={20} />
-                  <span>Certificado de Conclusão</span>
+                <li>
+                  <Award size={16} aria-hidden="true" />
+                  Certificado de conclusão
                 </li>
-                <li className="d-flex align-items-center gap-2 text-muted">
-                  <PlayCircle size={20} />
-                  <span>
-                    {course.lessons.length} aulas · {formatDuration(totalMinutes)} de conteúdo
-                  </span>
+                <li>
+                  <Users size={16} aria-hidden="true" />
+                  {enrolled} {enrolled === 1 ? 'aluno matriculado' : 'alunos matriculados'}
                 </li>
               </ul>
-
-              <hr />
-              <p className="small text-muted mb-0">
-                {course._count.enrollments} aluno(s) matriculado(s)
-              </p>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </div>

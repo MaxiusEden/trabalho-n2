@@ -90,12 +90,12 @@ export function TrilhasManager({ trilhas }: { trilhas: AdminTrilha[] }) {
 
   return (
     <div className="row g-4">
-      <div className="col-12 col-lg-4">
-        <div className="card shadow-sm">
+      <div className="col-12 col-xl-4">
+        <div className="card">
           <div className="card-body">
-            <h5 className="card-title mb-3">
+            <h2 className="h5 card-title mb-3">
               {editingId === null ? 'Nova trilha' : `Editando trilha #${editingId}`}
-            </h5>
+            </h2>
 
             <FormErrors messages={errors} />
 
@@ -143,35 +143,35 @@ export function TrilhasManager({ trilhas }: { trilhas: AdminTrilha[] }) {
         </div>
       </div>
 
-      <div className="col-12 col-lg-8">
+      <div className="col-12 col-xl-8">
         {notice && <div className="alert alert-success">{notice}</div>}
 
-        <div className="card shadow-sm">
+        <div className="card">
           <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">
+            <table className="table table-hover table-stack align-middle mb-0">
+              <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Título</th>
-                  <th>Descrição</th>
-                  <th>Módulos</th>
+                  <th>Trilha</th>
                   <th className="text-end">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {trilhas.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center text-muted py-4">
+                    <td colSpan={2} className="text-center text-muted py-4">
                       Nenhuma trilha cadastrada.
                     </td>
                   </tr>
                 ) : (
                   trilhas.map((trilha) => (
                     <tr key={trilha.id}>
-                      <td>{trilha.id}</td>
-                      <td>{trilha.title}</td>
-                      <td className="small text-muted">{trilha.description}</td>
-                      <td>{trilha._count.courses}</td>
+                      <td>
+                        {trilha.title}
+                        <div className="small text-muted">{trilha.description}</div>
+                        <div className="small text-muted">
+                          #{trilha.id} · {trilha._count.courses} curso(s)
+                        </div>
+                      </td>
                       <td className="text-end text-nowrap">
                         <Link
                           href={`/trilhas/${trilha.id}`}

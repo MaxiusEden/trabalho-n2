@@ -7,10 +7,10 @@ export default async function AdminTrilhasPage() {
   const trilhas = await trilhasService.findAll();
 
   return (
-    <div className="container-fluid">
-      <h1 className="h3 text-black mb-1">Trilhas</h1>
-      <p className="text-muted">
-        O número de módulos é a contagem de cursos vinculados — não é um campo editável.
+    <div>
+      <h1 className="admin-title">Trilhas</h1>
+      <p className="text-muted mb-4">
+        O total de cursos vem dos cursos vinculados à trilha — não é um campo editável.
       </p>
 
       <TrilhasManager trilhas={trilhas} />

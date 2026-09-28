@@ -11,9 +11,9 @@ export default async function AdminCursosPage() {
   ]);
 
   return (
-    <div className="container-fluid">
-      <h1 className="h3 text-black mb-1">Cursos</h1>
-      <p className="text-muted">
+    <div>
+      <h1 className="admin-title">Cursos</h1>
+      <p className="text-muted mb-4">
         Cada curso pode pertencer a uma trilha e ter seu conteúdo programático (aulas).
       </p>
 
