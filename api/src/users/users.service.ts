@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt'; // Biblioteca para hash de senha
+
+// Nenhuma resposta da API devolve a senha, nem o hash.
+const semSenha = { password: true } as const;
 
 @Injectable()
 export class UsersService {
@@ -16,10 +19,12 @@ export class UsersService {
     // Salva o usuário no banco com a senha criptografada
     return this.prisma.user.create({
       data: { ...createUserDto, password: hash },
+      omit: semSenha,
     });
   }
 
-  // Método essencial para buscar usuário pelo e-mail durante o login
+  // Método essencial para buscar usuário pelo e-mail durante o login.
+  // É o único que traz o hash: o AuthService precisa dele para comparar.
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
@@ -27,11 +32,16 @@ export class UsersService {
   }
 
   findAll() {
-    return this.prisma.user.findMany();
+    return this.prisma.user.findMany({ omit: semSenha });
   }
 
-  findOne(id: number) {
-    return this.prisma.user.findUnique({ where: { id } });
+  async findOne(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      omit: semSenha,
+    });
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    return user;
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
@@ -45,10 +55,11 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data,
+      omit: semSenha,
     });
   }
 
   remove(id: number) {
-    return this.prisma.user.delete({ where: { id } });
+    return this.prisma.user.delete({ where: { id }, omit: semSenha });
   }
 }
