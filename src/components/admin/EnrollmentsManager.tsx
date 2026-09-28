@@ -166,10 +166,11 @@ export function EnrollmentsManager({
                         {enrollment.user.name ?? enrollment.user.email} em{' '}
                         <span className="fw-semibold">{enrollment.course.title}</span>
                         <div className="small text-muted text-break">{enrollment.user.email}</div>
-                        <div className="small text-muted">
-                          #{enrollment.id} · {formatPrice(enrollment.course.priceCents)} ·{' '}
-                          {formatDate(enrollment.createdAt)}
-                        </div>
+                        <ul className="meta-list">
+                          <li>#{enrollment.id}</li>
+                          <li>{formatPrice(enrollment.course.priceCents)}</li>
+                          <li>{formatDate(enrollment.createdAt)}</li>
+                        </ul>
                       </td>
                       <td className="text-end">
                         <button

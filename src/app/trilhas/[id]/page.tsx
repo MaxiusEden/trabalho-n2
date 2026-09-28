@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { trilhasService } from '@/lib/trilhas/trilhas.service';
 import { NotFoundError } from '@/lib/http/errors';
+import { formatCount } from '@/lib/format';
 import { CourseCard } from '@/components/CourseCard';
 import { EmptyState } from '@/components/EmptyState';
 
@@ -19,8 +20,6 @@ export default async function TrilhaDetailsPage({ params }: PageProps<'/trilhas/
     throw error;
   });
 
-  const total = trilha._count.courses;
-
   return (
     <div className="container">
       <Link href="/trilhas" className="back-link">
@@ -31,9 +30,7 @@ export default async function TrilhaDetailsPage({ params }: PageProps<'/trilhas/
       <header className="page-header">
         <h1 className="page-title">{trilha.title}</h1>
         <p className="page-lead">{trilha.description}</p>
-        <p className="page-meta">
-          {total} {total === 1 ? 'curso' : 'cursos'}
-        </p>
+        <p className="page-meta">{formatCount(trilha._count.courses, 'curso', 'cursos')}</p>
       </header>
 
       {trilha.courses.length === 0 ? (

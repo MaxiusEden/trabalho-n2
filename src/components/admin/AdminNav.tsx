@@ -11,25 +11,37 @@ const SECTIONS = [
   { href: '/admin/matriculas', label: 'Matrículas', icon: GraduationCap },
 ] as const;
 
-/** Navegação da área administrativa: coluna em telas largas, linha com quebra no celular. */
+/**
+ * Seções da área administrativa: coluna com ícones em telas largas, uma linha
+ * compacta no celular. As ferramentas ficam logo abaixo só a partir de `lg`;
+ * no celular elas vão para o pé da página (ver `AdminTools` no layout).
+ */
 export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Administração">
-      <p className="admin-nav__title">Administração</p>
-      <ul className="admin-nav__list">
-        {SECTIONS.map(({ href, label, icon: Icon }) => (
-          <li key={href}>
-            <Link href={href} aria-current={pathname === href ? 'page' : undefined}>
-              <Icon size={16} aria-hidden="true" />
-              {label}
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <div>
+      <nav aria-label="Administração">
+        <ul className="admin-nav__list">
+          {SECTIONS.map(({ href, label, icon: Icon }) => (
+            <li key={href}>
+              <Link href={href} aria-current={pathname === href ? 'page' : undefined}>
+                <Icon size={16} aria-hidden="true" className="d-none d-lg-inline" />
+                {label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <AdminTools className="d-none d-lg-block" />
+    </div>
+  );
+}
 
-      <p className="admin-nav__title">Ferramentas</p>
+/** Links de apoio (Prisma Studio e documentação da API), separados das seções por uma linha. */
+export function AdminTools({ className = '' }: { className?: string }) {
+  return (
+    <nav aria-label="Ferramentas" className={`admin-tools ${className}`}>
       <ul className="admin-nav__list">
         <li>
           <a href="http://localhost:5555" target="_blank" rel="noreferrer">

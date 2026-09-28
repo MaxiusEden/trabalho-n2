@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 import { trilhasService } from '@/lib/trilhas/trilhas.service';
+import { formatCount } from '@/lib/format';
 import { EmptyState } from '@/components/EmptyState';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +13,7 @@ export default async function TrilhasPage() {
     <div className="container">
       <header className="page-header">
         <h1 className="page-title">Trilhas</h1>
-        <p className="page-lead">Cursos agrupados em uma sequência, do primeiro ao último.</p>
+        <p className="page-lead">Cursos agrupados por área. Abra uma trilha para ver os cursos dela.</p>
       </header>
 
       {trilhas.length === 0 ? (
@@ -23,29 +23,30 @@ export default async function TrilhasPage() {
         </EmptyState>
       ) : (
         <div className="row g-4">
-          {trilhas.map((trilha) => (
-            <div key={trilha.id} className="col-12 col-md-6">
-              <article className="card course-card h-100">
-                <div className="card-body d-flex flex-column">
-                  <h2 className="course-card__title">
-                    <Link href={`/trilhas/${trilha.id}`} className="stretched-link">
+          {trilhas.map((trilha) => {
+            const titleId = `trilha-title-${trilha.id}`;
+            return (
+              <div key={trilha.id} className="col-12 col-md-6">
+                <Link
+                  href={`/trilhas/${trilha.id}`}
+                  className="card course-card h-100"
+                  aria-labelledby={titleId}
+                >
+                  <div className="card-body d-flex flex-column">
+                    <h2 id={titleId} className="course-card__title">
                       {trilha.title}
-                    </Link>
-                  </h2>
-                  <p className="course-card__description">{trilha.description}</p>
-                  <div className="course-card__footer">
-                    <span className="text-muted small">
-                      {trilha._count.courses} {trilha._count.courses === 1 ? 'curso' : 'cursos'}
-                    </span>
-                    <span className="course-card__cta" aria-hidden="true">
-                      Ver trilha
-                      <ArrowRight size={16} />
-                    </span>
+                    </h2>
+                    <p className="course-card__description">{trilha.description}</p>
+                    <div className="course-card__footer">
+                      <span className="text-muted small">
+                        {formatCount(trilha._count.courses, 'curso', 'cursos')}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </article>
-            </div>
-          ))}
+                </Link>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

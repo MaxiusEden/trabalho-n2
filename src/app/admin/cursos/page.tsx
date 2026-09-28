@@ -13,9 +13,7 @@ export default async function AdminCursosPage() {
   return (
     <div>
       <h1 className="admin-title">Cursos</h1>
-      <p className="text-muted mb-4">
-        Cada curso pode pertencer a uma trilha e ter seu conteúdo programático (aulas).
-      </p>
+      <p className="text-muted mb-4">Cadastre cursos com preço, trilha e a lista de aulas.</p>
 
       <CoursesManager
         courses={courses}

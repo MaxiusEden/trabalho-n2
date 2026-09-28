@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { apiFetch, toMessages } from '@/lib/api-client';
-import { formatDate } from '@/lib/format';
+import { formatCount, formatDate } from '@/lib/format';
 import { FormErrors } from './FormErrors';
 
 export type AdminUser = {
@@ -187,10 +187,14 @@ export function UsersManager({ users }: { users: AdminUser[] }) {
                       <td>
                         {user.name ?? <span className="text-muted">Sem nome</span>}
                         <div className="small text-muted text-break">{user.email}</div>
-                        <div className="small text-muted">
-                          #{user.id} · {user._count?.enrollments ?? 0} matrícula(s) · criado em{' '}
-                          {formatDate(user.createdAt)} · atualizado em {formatDate(user.updateAt)}
-                        </div>
+                        <ul className="meta-list">
+                          <li>#{user.id}</li>
+                          <li>
+                            {formatCount(user._count?.enrollments ?? 0, 'matrícula', 'matrículas')}
+                          </li>
+                          <li>Criado em {formatDate(user.createdAt)}</li>
+                          <li>Atualizado em {formatDate(user.updateAt)}</li>
+                        </ul>
                       </td>
                       <td className="text-end text-nowrap">
                         <Link

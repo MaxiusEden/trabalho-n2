@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { apiFetch, toMessages } from '@/lib/api-client';
-import { formatPrice, parsePriceToCents } from '@/lib/format';
+import { formatCount, formatPrice, parsePriceToCents } from '@/lib/format';
 import { FormErrors } from './FormErrors';
 
 export type AdminCourse = {
@@ -149,7 +149,7 @@ export function CoursesManager({
   async function handleDelete(course: AdminCourse) {
     if (
       !window.confirm(
-        `Excluir o curso "${course.title}"? As aulas e as ${course._count.enrollments} matrícula(s) dele também serão removidas.`,
+        `Excluir o curso "${course.title}"? As aulas dele e ${formatCount(course._count.enrollments, 'matrícula', 'matrículas')} também serão removidas.`,
       )
     )
       return;
@@ -354,11 +354,15 @@ export function CoursesManager({
                     <tr key={course.id}>
                       <td>
                         {course.title}
-                        <div className="small text-muted">
-                          #{course.id} · {course.trilha ? course.trilha.title : 'Sem trilha'} ·{' '}
-                          {course.lessons.length} aula(s) · {course._count.enrollments} matrícula(s)
-                          <span className="d-sm-none"> · {formatPrice(course.priceCents)}</span>
-                        </div>
+                        <ul className="meta-list">
+                          <li>#{course.id}</li>
+                          <li>{course.trilha ? course.trilha.title : 'Sem trilha'}</li>
+                          <li>{formatCount(course.lessons.length, 'aula', 'aulas')}</li>
+                          <li>
+                            {formatCount(course._count.enrollments, 'matrícula', 'matrículas')}
+                          </li>
+                          <li className="d-sm-none">{formatPrice(course.priceCents)}</li>
+                        </ul>
                       </td>
                       <td className="price d-none d-sm-table-cell">{formatPrice(course.priceCents)}</td>
                       <td className="text-end text-nowrap">

@@ -10,7 +10,7 @@ export default async function AdminTrilhasPage() {
     <div>
       <h1 className="admin-title">Trilhas</h1>
       <p className="text-muted mb-4">
-        O total de cursos vem dos cursos vinculados à trilha — não é um campo editável.
+        Crie trilhas para agrupar cursos. Para colocar um curso numa trilha, edite o curso.
       </p>
 
       <TrilhasManager trilhas={trilhas} />

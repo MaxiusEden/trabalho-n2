@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Award, Clock, Users } from 'lucide-react';
 import { coursesService } from '@/lib/courses/courses.service';
 import { NotFoundError } from '@/lib/http/errors';
-import { formatDuration, formatPrice } from '@/lib/format';
+import { formatCount, formatDuration, formatPrice } from '@/lib/format';
 import { EnrollButton } from '@/components/EnrollButton';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +20,6 @@ export default async function CourseDetailsPage({ params }: PageProps<'/curso/[i
   });
 
   const totalMinutes = course.lessons.reduce((sum, lesson) => sum + lesson.duration, 0);
-  const enrolled = course._count.enrollments;
 
   return (
     <div className="container">
@@ -32,22 +31,20 @@ export default async function CourseDetailsPage({ params }: PageProps<'/curso/[i
       <div className="row g-4 g-lg-5">
         <div className="col-lg-8">
           <header>
+            <h1 className="page-title">{course.title}</h1>
             {course.trilha && (
-              <p className="mb-2">
-                <Link href={`/trilhas/${course.trilha.id}`} className="tag text-decoration-none">
-                  {course.trilha.title}
-                </Link>
+              <p className="page-meta mt-0 mb-3">
+                Parte da <Link href={`/trilhas/${course.trilha.id}`}>{course.trilha.title}</Link>
               </p>
             )}
-            <h1 className="page-title">{course.title}</h1>
             <p className="page-lead">{course.description}</p>
           </header>
 
           <h2 className="section-title">Conteúdo programático</h2>
-          <p className="text-muted small mb-0">
-            {course.lessons.length} {course.lessons.length === 1 ? 'aula' : 'aulas'} ·{' '}
-            {formatDuration(totalMinutes)} no total
-          </p>
+          <ul className="meta-list">
+            <li>{formatCount(course.lessons.length, 'aula', 'aulas')}</li>
+            <li>{formatDuration(totalMinutes)} no total</li>
+          </ul>
 
           {course.lessons.length === 0 ? (
             <p className="text-muted mt-3">Este curso ainda não tem aulas cadastradas.</p>
@@ -58,6 +55,14 @@ export default async function CourseDetailsPage({ params }: PageProps<'/curso/[i
                   <span className="lesson-list__index">{index + 1}</span>
                   <span>{lesson.title}</span>
                   <span className="lesson-list__duration">{formatDuration(lesson.duration)}</span>
+                  {/* Complemento visual da duração escrita ao lado: parte da aula no total do curso. */}
+                  <span className="lesson-list__bar" aria-hidden="true">
+                    <span
+                      style={{
+                        width: `${totalMinutes > 0 ? (lesson.duration / totalMinutes) * 100 : 0}%`,
+                      }}
+                    />
+                  </span>
                 </li>
               ))}
             </ol>
@@ -66,8 +71,6 @@ export default async function CourseDetailsPage({ params }: PageProps<'/curso/[i
 
         <div className="col-lg-4">
           <aside className="card purchase-card sticky-lg-top" aria-label="Matrícula">
-            {/* eslint-disable-next-line @next/next/no-img-element -- a capa é uma URL livre cadastrada pelo admin */}
-            <img src={course.image} alt="" className="card-img-top course-cover" />
             <div className="card-body">
               <p className="price price--large mb-3">{formatPrice(course.priceCents)}</p>
 
@@ -84,7 +87,7 @@ export default async function CourseDetailsPage({ params }: PageProps<'/curso/[i
                 </li>
                 <li>
                   <Users size={16} aria-hidden="true" />
-                  {enrolled} {enrolled === 1 ? 'aluno matriculado' : 'alunos matriculados'}
+                  {formatCount(course._count.enrollments, 'aluno matriculado', 'alunos matriculados')}
                 </li>
               </ul>
             </div>

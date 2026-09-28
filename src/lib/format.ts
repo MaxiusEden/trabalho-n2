@@ -19,3 +19,8 @@ export function formatDate(value: Date | string): string {
 export function formatDuration(minutes: number): string {
   return `${minutes} min`;
 }
+
+/** "1 aula", "4 aulas", "0 aulas". */
+export function formatCount(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}

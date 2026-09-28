@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { apiFetch, toMessages } from '@/lib/api-client';
+import { formatCount } from '@/lib/format';
 import { FormErrors } from './FormErrors';
 
 export type AdminTrilha = {
@@ -67,7 +68,9 @@ export function TrilhasManager({ trilhas }: { trilhas: AdminTrilha[] }) {
   async function handleDelete(trilha: AdminTrilha) {
     const aviso =
       trilha._count.courses > 0
-        ? ` Os ${trilha._count.courses} curso(s) dela ficarão sem trilha (não serão excluídos).`
+        ? trilha._count.courses === 1
+          ? ' O curso dela ficará sem trilha (não será excluído).'
+          : ` Os ${trilha._count.courses} cursos dela ficarão sem trilha (não serão excluídos).`
         : '';
 
     if (!window.confirm(`Excluir a trilha "${trilha.title}"?${aviso}`)) return;
@@ -168,9 +171,10 @@ export function TrilhasManager({ trilhas }: { trilhas: AdminTrilha[] }) {
                       <td>
                         {trilha.title}
                         <div className="small text-muted">{trilha.description}</div>
-                        <div className="small text-muted">
-                          #{trilha.id} · {trilha._count.courses} curso(s)
-                        </div>
+                        <ul className="meta-list">
+                          <li>#{trilha.id}</li>
+                          <li>{formatCount(trilha._count.courses, 'curso', 'cursos')}</li>
+                        </ul>
                       </td>
                       <td className="text-end text-nowrap">
                         <Link

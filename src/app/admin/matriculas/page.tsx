@@ -23,8 +23,8 @@ export default async function AdminMatriculasPage({
     <div>
       <h1 className="admin-title">Matrículas</h1>
       <p className="text-muted mb-4">
-        Relação entre <code>User</code> e <code>Course</code>. O banco impede a mesma pessoa de se
-        matricular duas vezes no mesmo curso.
+        Matricule alunos em cursos. A mesma pessoa não pode ser matriculada duas vezes no mesmo
+        curso.
       </p>
 
       <EnrollmentsManager

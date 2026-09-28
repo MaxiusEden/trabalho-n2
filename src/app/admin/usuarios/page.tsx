@@ -9,9 +9,7 @@ export default async function AdminUsuariosPage() {
   return (
     <div>
       <h1 className="admin-title">Usuários</h1>
-      <p className="text-muted mb-4">
-        CRUD completo da entidade <code>User</code> — criar, listar, atualizar e excluir.
-      </p>
+      <p className="text-muted mb-4">Cadastre, edite e exclua quem usa a plataforma.</p>
 
       <UsersManager users={users} />
     </div>

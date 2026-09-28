@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 import { formatPrice } from '@/lib/format';
 
 type CourseCardProps = {
@@ -13,28 +12,27 @@ type CourseCardProps = {
   trilhaTitle?: string | null;
 };
 
-/** Card de curso usado na Home e no detalhe da trilha. O card inteiro é o link. */
+/**
+ * Card de curso usado na Home e no detalhe da trilha. O card inteiro é o link;
+ * o título dá o nome acessível (aria-labelledby), sem ler a descrição e o preço.
+ */
 export function CourseCard({ course, trilhaTitle }: CourseCardProps) {
+  const titleId = `course-title-${course.id}`;
+
   return (
-    <article className="card course-card h-100">
+    <Link href={`/curso/${course.id}`} className="card course-card h-100" aria-labelledby={titleId}>
       {/* eslint-disable-next-line @next/next/no-img-element -- a capa é uma URL livre cadastrada pelo admin */}
       <img src={course.image} className="card-img-top course-cover" alt="" />
       <div className="card-body d-flex flex-column">
-        {trilhaTitle && <span className="tag align-self-start mb-2">{trilhaTitle}</span>}
-        <h2 className="course-card__title">
-          <Link href={`/curso/${course.id}`} className="stretched-link">
-            {course.title}
-          </Link>
+        <h2 id={titleId} className="course-card__title">
+          {course.title}
         </h2>
         <p className="course-card__description">{course.description}</p>
         <div className="course-card__footer">
           <span className="price">{formatPrice(course.priceCents)}</span>
-          <span className="course-card__cta" aria-hidden="true">
-            Ver curso
-            <ArrowRight size={16} />
-          </span>
+          {trilhaTitle && <span className="text-muted small text-end">{trilhaTitle}</span>}
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
