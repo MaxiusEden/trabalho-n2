@@ -4,18 +4,60 @@ Plataforma de cursos e trilhas de aprendizado. O repositório é um monorepo; ca
 pasta tem o seu `package.json` e roda sozinha:
 
 ```
+api/    NestJS 11 + Prisma + PostgreSQL + Swagger — segue o PDF "CRUD - NestJS"
 web/    Next.js (App Router), o frontend
 docs/   PDFs da disciplina e diagramas
 ```
 
-A pasta `api/` (NestJS + Prisma + PostgreSQL + Swagger) entra no próximo passo da
-migração. Até lá o `web/` tem as próprias Route Handlers e um banco SQLite.
+A migração está em andamento: a `api/` tem por enquanto só o recurso `users`, e o
+`web/` ainda usa as próprias Route Handlers e um banco SQLite. Os dois bancos são
+separados até o `web/` passar a consumir a API do Nest.
 
-| Pasta  | Porta | Endereço                  |
-| ------ | ----- | ------------------------- |
-| `web/` | 3001  | <http://localhost:3001>   |
+| Pasta  | Porta | Endereço                                       |
+| ------ | ----- | ---------------------------------------------- |
+| `api/` | 3000  | <http://localhost:3000/api> (Swagger)          |
+| `web/` | 3001  | <http://localhost:3001>                        |
 
-A porta 3000 fica reservada para o Nest.
+## api/ — NestJS
+
+Precisa de um PostgreSQL local em `localhost:5432`. Crie `api/.env` (fora do Git)
+com a `DATABASE_URL` da seção 2 do PDF (`docs/CRUD - NestJS.pdf`), apontando para o
+banco `DBdev` com o usuário e a senha do seu Postgres:
+
+```
+DATABASE_URL="postgresql://USUARIO:SENHA@localhost:5432/DBdev?schema=public"
+```
+
+```bash
+cd api
+npm install
+npx prisma migrate dev
+npx prisma generate
+npm run start:dev
+```
+
+O `migrate dev` cria o banco `DBdev` se ele não existir. A documentação interativa
+fica em <http://localhost:3000/api>.
+
+A `api/` usa **NestJS 11 de propósito**: é a versão do template que os PDFs da
+disciplina seguem (CommonJS, imports sem extensão, ESLint, Jest). O template do
+Nest 12 é ESM e quebra o `moduleFormat = "cjs"` do Prisma que o PDF pede. Os
+geradores rodam com o CLI local: `npx nest generate ...` dentro de `api/`.
+
+| Rota                 | O que faz               |
+| -------------------- | ----------------------- |
+| `POST /users`        | Cria um usuário         |
+| `GET /users`         | Lista os usuários       |
+| `GET /users/:id`     | Busca um usuário        |
+| `PATCH /users/:id`   | Atualiza um usuário     |
+| `DELETE /users/:id`  | Remove um usuário       |
+
+Scripts (dentro de `api/`): `npm run start:dev`, `npm run build`,
+`npm run typecheck`, `npm run lint`, `npm test`.
+
+Como no PDF, a senha ainda é gravada e devolvida em texto puro, e e-mail repetido
+devolve 500. As próximas etapas tratam isso (erros do Prisma, `omit` da senha e
+bcrypt).
 
 ## web/ — frontend Next.js
 
