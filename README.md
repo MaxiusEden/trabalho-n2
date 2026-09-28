@@ -1,42 +1,52 @@
-# Perero Cursos — CRUD em Next.js + Prisma
+# Perero Cursos
 
-Plataforma de cursos (`trabalho-n2`) reescrita em Next.js (App Router) com persistência real
-via Prisma. O CRUD segue a estrutura do PDF *CRUD - NestJS*, com cada camada do NestJS
-traduzida para o equivalente do Next.js.
+Plataforma de cursos e trilhas de aprendizado. O repositório é um monorepo; cada
+pasta tem o seu `package.json` e roda sozinha:
 
-| PDF (NestJS)                          | Aqui (Next.js)                                        |
-| ------------------------------------- | ----------------------------------------------------- |
-| `PrismaService`                       | [`src/lib/prisma.ts`](src/lib/prisma.ts) (singleton)   |
-| DTOs com `class-validator`            | `src/lib/<recurso>/dto/*.dto.ts`                       |
-| `ValidationPipe` global               | [`validateDto`](src/lib/http/validation.ts)            |
-| `UsersService`                        | `src/lib/<recurso>/*.service.ts`                       |
-| `UsersController` (REST)              | Route Handlers em `src/app/api/**/route.ts`            |
-| Swagger em `/api`                     | Documentação da API em `/api`                          |
+```
+web/    Next.js (App Router), o frontend
+docs/   PDFs da disciplina e diagramas
+```
 
-## Como rodar
+A pasta `api/` (NestJS + Prisma + PostgreSQL + Swagger) entra no próximo passo da
+migração. Até lá o `web/` tem as próprias Route Handlers e um banco SQLite.
+
+| Pasta  | Porta | Endereço                  |
+| ------ | ----- | ------------------------- |
+| `web/` | 3001  | <http://localhost:3001>   |
+
+A porta 3000 fica reservada para o Nest.
+
+## web/ — frontend Next.js
 
 ```bash
+cd web
 npm install
-```
-
-```bash
 npm run setup
-```
-
-`setup` aplica as migrations, gera o Prisma Client e popula o banco. Depois:
-
-```bash
 npm run dev
 ```
 
-A aplicação sobe em <http://localhost:3000>.
+`setup` aplica as migrations, gera o Prisma Client e popula o banco. A aplicação sobe
+em <http://localhost:3001>.
 
-O banco é um **SQLite em arquivo** (`prisma/dev.db`) — não precisa de servidor de banco,
-Docker nem nenhum outro programa externo. A conexão fica em `.env`:
+O banco do `web/` é um **SQLite em arquivo** (`web/prisma/dev.db`). A conexão fica em
+`web/.env`:
 
 ```
 DATABASE_URL="file:./prisma/dev.db"
 ```
+
+O CRUD segue a estrutura do PDF *CRUD - NestJS*, com cada camada do NestJS traduzida
+para o equivalente do Next.js:
+
+| PDF (NestJS)                          | Aqui (Next.js)                                               |
+| ------------------------------------- | ------------------------------------------------------------ |
+| `PrismaService`                       | [`web/src/lib/prisma.ts`](web/src/lib/prisma.ts) (singleton)  |
+| DTOs com `class-validator`            | `web/src/lib/<recurso>/dto/*.dto.ts`                          |
+| `ValidationPipe` global               | [`validateDto`](web/src/lib/http/validation.ts)               |
+| `UsersService`                        | `web/src/lib/<recurso>/*.service.ts`                          |
+| `UsersController` (REST)              | Route Handlers em `web/src/app/api/**/route.ts`               |
+| Swagger em `/api`                     | Documentação da API em `/api`                                 |
 
 ### Usuários semeados
 
@@ -45,13 +55,13 @@ DATABASE_URL="file:./prisma/dev.db"
 | `aluno@perero.com` | `senha123` |
 | `joao@email.com`   | `senha123` |
 
-## Scripts
+### Scripts (dentro de `web/`)
 
 | Script               | O que faz                                          |
 | -------------------- | -------------------------------------------------- |
-| `npm run dev`        | Servidor de desenvolvimento                        |
+| `npm run dev`        | Servidor de desenvolvimento na porta 3001          |
 | `npm run build`      | Build de produção                                  |
-| `npm start`          | Sobe o build de produção                           |
+| `npm start`          | Sobe o build de produção na porta 3001             |
 | `npm run typecheck`  | `tsc --noEmit`                                     |
 | `npm run lint`       | ESLint                                             |
 | `npm run db:migrate` | Cria/aplica migrations (`prisma migrate dev`)      |
@@ -59,7 +69,7 @@ DATABASE_URL="file:./prisma/dev.db"
 | `npm run db:reset`   | Apaga o banco, reaplica as migrations e re-semeia  |
 | `npm run db:studio`  | Abre o Prisma Studio                               |
 
-## Telas
+### Telas
 
 | Rota                  | O que é                                                          |
 | --------------------- | ---------------------------------------------------------------- |
@@ -74,7 +84,7 @@ DATABASE_URL="file:./prisma/dev.db"
 | `/admin/matriculas`   | CRUD de matrículas                                               |
 | `/api`                | Documentação da API                                              |
 
-## Modelo de dados
+### Modelo de dados
 
 ```
 User 1──n Enrollment n──1 Course n──1 Trilha
@@ -89,9 +99,14 @@ User 1──n Enrollment n──1 Course n──1 Trilha
 - Apagar uma trilha **não** apaga os cursos: eles ficam com `trilhaId = null`.
 - O "Módulos: N" das trilhas é derivado da contagem de cursos, nunca armazenado.
 
-## Observação de segurança
+### Observação de segurança
 
 Seguindo o PDF, a senha é gravada **em texto puro** (`data: createUserDto`). Ela nunca é
 devolvida pela API, mas antes de usar isso para valer o `password` precisa passar por hash.
 O login também é apenas uma conferência de credenciais: não emite cookie de sessão nem
 token, e as rotas de `/admin` e da API não são protegidas.
+
+## VS Code
+
+`.vscode/settings.json` aponta a extensão do ESLint para `web/` e `api/`, para que cada
+pasta use a própria configuração.
