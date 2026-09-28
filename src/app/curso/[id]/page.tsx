@@ -32,13 +32,12 @@ export default async function CourseDetailsPage({ params }: PageProps<'/curso/[i
 
       <div className="row mb-5">
         <div className="col-lg-8">
-          <div className="ratio ratio-16x9 bg-dark rounded mb-4 d-flex align-items-center justify-content-center text-white">
-            <div className="text-center p-5">
-              <PlayCircle size={64} className="mb-3 text-secondary" />
-              <h3>Vídeo de Apresentação</h3>
-              <p className="text-muted mb-0">Preview do Curso #{course.id}</p>
-            </div>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- a capa é uma URL livre cadastrada pelo admin */}
+          <img
+            src={course.image}
+            alt={course.title}
+            className="rounded mb-4 course-cover w-100"
+          />
 
           <h1 className="display-5 text-black">{course.title}</h1>
           {course.trilha && (

@@ -21,7 +21,14 @@ const trilhaDetailSelect = {
   ...trilhaSelect,
   courses: {
     orderBy: { id: 'asc' },
-    select: { id: true, title: true, description: true, image: true, priceCents: true },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      image: true,
+      priceCents: true,
+      lessons: { select: { duration: true } },
+    },
   },
 } satisfies Prisma.TrilhaSelect;
 

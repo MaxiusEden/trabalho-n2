@@ -1,9 +1,11 @@
-// Perero Cursos — modelagem do banco
+// LAB03 - Plataforma de Cursos Online
 //
-// A entidade `User` segue exatamente a especificação do PDF (CRUD - NestJS):
-// id autoincremento, email único, name opcional, password, createdAt e updateAt.
-// As demais entidades foram extraídas da plataforma de cursos (trabalho-n2):
-// Trilha, Course, Lesson e Enrollment.
+// Modelo de dados alinhado ao enunciado:
+// Core: Usuarios, Categorias, Cursos
+// Conteudo: Modulos, Aulas
+// Interacao: Matriculas, Progresso_Aulas, Avaliacoes
+// Curadoria: Trilhas, Trilhas_Cursos, Certificados
+// Negocio: Planos, Assinaturas, Pagamentos
 
 generator client {
   provider     = "prisma-client"
@@ -15,75 +17,243 @@ datasource db {
   provider = "sqlite"
 }
 
-/// Usuário da plataforma. Espelha o `model User` definido no PDF.
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  password  String
-  createdAt DateTime @default(now())
-  updateAt  DateTime @updatedAt
-
-  enrollments Enrollment[]
+enum NivelCurso {
+  INICIANTE
+  INTERMEDIARIO
+  AVANCADO
 }
 
-/// Trilha de aprendizado. Agrupa cursos (`Trilhas.tsx`).
-/// O contador de módulos exibido na UI é derivado de `courses`, nunca armazenado,
-/// para não existir estado inconsistente entre o contador e os cursos reais.
+enum TipoConteudo {
+  VIDEO
+  TEXTO
+  QUIZ
+}
+
+enum StatusProgresso {
+  CONCLUIDO
+}
+
+enum MetodoPagamento {
+  CARTAO_CREDITO
+  CARTAO_DEBITO
+  PIX
+  BOLETO
+}
+
+model Usuario {
+  idUsuario    Int      @id @default(autoincrement()) @map("ID_Usuario")
+  nomeCompleto String   @map("NomeCompleto")
+  email        String   @unique @map("Email")
+  senhaHash    String   @map("SenhaHash")
+  dataCadastro DateTime @default(now()) @map("DataCadastro")
+
+  cursosComoInstrutor Curso[]         @relation("InstrutorCurso")
+  matriculas          Matricula[]
+  progressoAulas      ProgressoAula[]
+  avaliacoes          Avaliacao[]
+  certificados        Certificado[]
+  assinaturas         Assinatura[]
+
+  @@map("Usuarios")
+}
+
+model Categoria {
+  idCategoria Int    @id @default(autoincrement()) @map("ID_Categoria")
+  nome        String @unique @map("Nome")
+  descricao   String @map("Descricao")
+
+  cursos  Curso[]
+  trilhas Trilha[]
+
+  @@map("Categorias")
+}
+
+model Curso {
+  idCurso        Int        @id @default(autoincrement()) @map("ID_Curso")
+  titulo         String     @map("Titulo")
+  descricao      String     @map("Descricao")
+  idInstrutor    Int?       @map("ID_Instrutor")
+  idCategoria    Int?       @map("ID_Categoria")
+  nivel          NivelCurso @default(INICIANTE) @map("Nivel")
+  dataPublicacao DateTime   @default(now()) @map("DataPublicacao")
+  totalAulas     Int        @default(0) @map("TotalAulas")
+  totalHoras     Float      @default(0) @map("TotalHoras")
+
+  instrutor     Usuario?       @relation("InstrutorCurso", fields: [idInstrutor], references: [idUsuario], onDelete: SetNull)
+  categoria     Categoria?     @relation(fields: [idCategoria], references: [idCategoria], onDelete: SetNull)
+  modulos       Modulo[]
+  matriculas    Matricula[]
+  avaliacoes    Avaliacao[]
+  trilhasCursos TrilhaCurso[]
+  certificados  Certificado[]
+
+  @@index([idInstrutor])
+  @@index([idCategoria])
+  @@map("Cursos")
+}
+
+model Modulo {
+  idModulo Int    @id @default(autoincrement()) @map("ID_Modulo")
+  idCurso  Int    @map("ID_Curso")
+  titulo   String @map("Titulo")
+  ordem    Int    @map("Ordem")
+
+  curso Curso  @relation(fields: [idCurso], references: [idCurso], onDelete: Cascade)
+  aulas Aula[]
+
+  @@unique([idCurso, ordem])
+  @@index([idCurso])
+  @@map("Modulos")
+}
+
+model Aula {
+  idAula         Int          @id @default(autoincrement()) @map("ID_Aula")
+  idModulo       Int          @map("ID_Modulo")
+  titulo         String       @map("Titulo")
+  tipoConteudo   TipoConteudo @default(VIDEO) @map("TipoConteudo")
+  urlConteudo    String       @map("URL_Conteudo")
+  duracaoMinutos Int          @map("DuracaoMinutos")
+  ordem          Int          @map("Ordem")
+
+  modulo         Modulo          @relation(fields: [idModulo], references: [idModulo], onDelete: Cascade)
+  progressoAulas ProgressoAula[]
+
+  @@unique([idModulo, ordem])
+  @@index([idModulo])
+  @@map("Aulas")
+}
+
+model Matricula {
+  idMatricula   Int       @id @default(autoincrement()) @map("ID_Matricula")
+  idUsuario     Int       @map("ID_Usuario")
+  idCurso       Int       @map("ID_Curso")
+  dataMatricula DateTime  @default(now()) @map("DataMatricula")
+  dataConclusao DateTime? @map("DataConclusao")
+
+  usuario Usuario @relation(fields: [idUsuario], references: [idUsuario], onDelete: Cascade)
+  curso   Curso   @relation(fields: [idCurso], references: [idCurso], onDelete: Cascade)
+
+  @@unique([idUsuario, idCurso])
+  @@index([idUsuario])
+  @@index([idCurso])
+  @@map("Matriculas")
+}
+
+model ProgressoAula {
+  idUsuario     Int             @map("ID_Usuario")
+  idAula        Int             @map("ID_Aula")
+  dataConclusao DateTime        @default(now()) @map("DataConclusao")
+  status        StatusProgresso @default(CONCLUIDO) @map("Status")
+
+  usuario Usuario @relation(fields: [idUsuario], references: [idUsuario], onDelete: Cascade)
+  aula    Aula    @relation(fields: [idAula], references: [idAula], onDelete: Cascade)
+
+  @@id([idUsuario, idAula])
+  @@index([idAula])
+  @@map("Progresso_Aulas")
+}
+
+model Avaliacao {
+  idAvaliacao   Int      @id @default(autoincrement()) @map("ID_Avaliacao")
+  idUsuario     Int      @map("ID_Usuario")
+  idCurso       Int      @map("ID_Curso")
+  nota          Int      @map("Nota")
+  comentario    String?  @map("Comentario")
+  dataAvaliacao DateTime @default(now()) @map("DataAvaliacao")
+
+  usuario Usuario @relation(fields: [idUsuario], references: [idUsuario], onDelete: Cascade)
+  curso   Curso   @relation(fields: [idCurso], references: [idCurso], onDelete: Cascade)
+
+  @@index([idUsuario])
+  @@index([idCurso])
+  @@map("Avaliacoes")
+}
+
 model Trilha {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  idTrilha    Int    @id @default(autoincrement()) @map("ID_Trilha")
+  titulo      String @map("Titulo")
+  descricao   String @map("Descricao")
+  idCategoria Int?   @map("ID_Categoria")
 
-  courses Course[]
+  categoria     Categoria?     @relation(fields: [idCategoria], references: [idCategoria], onDelete: SetNull)
+  trilhasCursos TrilhaCurso[]
+  certificados  Certificado[]
+
+  @@index([idCategoria])
+  @@map("Trilhas")
 }
 
-/// Curso ofertado (`Home.tsx` / `CourseDetails.tsx`).
-/// O preço é guardado em centavos para evitar erro de arredondamento de ponto flutuante.
-model Course {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  image       String
-  priceCents  Int
-  trilhaId    Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model TrilhaCurso {
+  idTrilha Int @map("ID_Trilha")
+  idCurso  Int @map("ID_Curso")
+  ordem    Int @map("Ordem")
 
-  trilha      Trilha?      @relation(fields: [trilhaId], references: [id], onDelete: SetNull)
-  lessons     Lesson[]
-  enrollments Enrollment[]
+  trilha Trilha @relation(fields: [idTrilha], references: [idTrilha], onDelete: Cascade)
+  curso  Curso  @relation(fields: [idCurso], references: [idCurso], onDelete: Cascade)
 
-  @@index([trilhaId])
+  @@id([idTrilha, idCurso])
+  @@unique([idTrilha, ordem])
+  @@index([idCurso])
+  @@map("Trilhas_Cursos")
 }
 
-/// Aula do conteúdo programático de um curso (`CourseDetails.tsx`).
-model Lesson {
-  id       Int    @id @default(autoincrement())
-  title    String
-  duration Int // duração em minutos
-  order    Int // posição da aula dentro do curso
-  courseId Int
+model Certificado {
+  idCertificado     Int      @id @default(autoincrement()) @map("ID_Certificado")
+  idUsuario         Int      @map("ID_Usuario")
+  idCurso           Int      @map("ID_Curso")
+  idTrilha          Int?     @map("ID_Trilha")
+  codigoVerificacao String   @unique @map("CodigoVerificacao")
+  dataEmissao       DateTime @default(now()) @map("DataEmissao")
 
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [idUsuario], references: [idUsuario], onDelete: Cascade)
+  curso   Curso   @relation(fields: [idCurso], references: [idCurso], onDelete: Cascade)
+  trilha  Trilha? @relation(fields: [idTrilha], references: [idTrilha], onDelete: SetNull)
 
-  @@unique([courseId, order])
-  @@index([courseId])
+  @@index([idUsuario])
+  @@index([idCurso])
+  @@index([idTrilha])
+  @@map("Certificados")
 }
 
-/// Matrícula de um usuário em um curso (botão "Matricular-se Agora").
-model Enrollment {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  courseId  Int
-  createdAt DateTime @default(now())
+model Plano {
+  idPlano      Int    @id @default(autoincrement()) @map("ID_Plano")
+  nome         String @map("Nome")
+  descricao    String @map("Descricao")
+  preco        Float  @map("Preco")
+  duracaoMeses Int    @map("DuracaoMeses")
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  assinaturas Assinatura[]
 
-  @@unique([userId, courseId])
-  @@index([userId])
-  @@index([courseId])
+  @@map("Planos")
+}
+
+model Assinatura {
+  idAssinatura Int      @id @default(autoincrement()) @map("ID_Assinatura")
+  idUsuario    Int      @map("ID_Usuario")
+  idPlano      Int      @map("ID_Plano")
+  dataInicio   DateTime @map("DataInicio")
+  dataFim      DateTime @map("DataFim")
+
+  usuario   Usuario     @relation(fields: [idUsuario], references: [idUsuario], onDelete: Cascade)
+  plano     Plano       @relation(fields: [idPlano], references: [idPlano], onDelete: Restrict)
+  pagamentos Pagamento[]
+
+  @@index([idUsuario])
+  @@index([idPlano])
+  @@map("Assinaturas")
+}
+
+model Pagamento {
+  idPagamento        Int             @id @default(autoincrement()) @map("ID_Pagamento")
+  idAssinatura       Int             @map("ID_Assinatura")
+  valorPago          Float           @map("ValorPago")
+  dataPagamento      DateTime        @default(now()) @map("DataPagamento")
+  metodoPagamento    MetodoPagamento @map("MetodoPagamento")
+  idTransacaoGateway String          @map("Id_Transacao_Gateway")
+  dataFim            DateTime        @map("DataFim")
+
+  assinatura Assinatura @relation(fields: [idAssinatura], references: [idAssinatura], onDelete: Cascade)
+
+  @@index([idAssinatura])
+  @@map("Pagamentos")
 }

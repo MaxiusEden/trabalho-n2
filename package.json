@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:studio": "node scripts/dev-with-studio.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -12,7 +13,7 @@
     "db:generate": "prisma generate",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset --force",
-    "db:studio": "prisma studio",
+    "db:studio": "node scripts/prisma-studio.mjs",
     "setup": "prisma migrate deploy && prisma generate && prisma db seed"
   },
   "dependencies": {

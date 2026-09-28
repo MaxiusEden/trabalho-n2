@@ -5,16 +5,22 @@ import { BookOpen, Menu } from 'lucide-react';
 import { useSession } from '@/lib/session';
 
 interface NavbarProps {
+  isSidebarOpen: boolean;
   onToggleSidebar: () => void;
 }
 
-export const Navbar = ({ onToggleSidebar }: NavbarProps) => {
+export const Navbar = ({ isSidebarOpen, onToggleSidebar }: NavbarProps) => {
   const { user, signOut } = useSession();
 
   return (
     <div className="d-flex justify-content-center align-items-center bg-dark p-3 mb-4 text-white w-100 position-relative">
-      <button className="btn btn-dark position-absolute start-0 ms-3" onClick={onToggleSidebar}>
-        <Menu size={24} />
+      <button
+        className="btn btn-dark position-absolute start-0 ms-3 d-lg-none"
+        onClick={onToggleSidebar}
+        aria-label={isSidebarOpen ? 'Fechar menu' : 'Abrir menu'}
+        aria-expanded={isSidebarOpen}
+      >
+        <Menu size={24} aria-hidden="true" />
       </button>
       <Link
         className="d-flex align-items-center gap-2 text-white text-decoration-none me-4 fs-4"

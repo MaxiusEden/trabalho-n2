@@ -27,10 +27,10 @@ export const Sidebar = ({ isOpen }: SidebarProps) => {
 
   return (
     <div
-      className={`d-flex flex-column bg-dark p-3 text-white vh-100 overflow-auto ${isOpen ? '' : 'd-none'}`}
+      className={`flex-column bg-dark p-3 text-white vh-100 overflow-auto d-lg-flex ${isOpen ? 'd-flex' : 'd-none'}`}
       style={{ width: '250px', minWidth: '250px' }}
     >
-      <h4 className="text-center mb-4">Painel</h4>
+      <p className="text-center mb-4 fs-4">Painel</p>
 
       <ul className="nav nav-pills flex-column mb-3">
         {NAV.map((item) => (
@@ -44,7 +44,7 @@ export const Sidebar = ({ isOpen }: SidebarProps) => {
 
       <hr />
 
-      <h6 className="text-uppercase text-white-50 small px-2">Administração</h6>
+      <p className="text-uppercase text-white-50 small px-2 mb-2">Administração</p>
       <ul className="nav nav-pills flex-column mb-auto">
         {ADMIN_NAV.map((item) => (
           <li key={item.href} className="nav-item mb-2">
@@ -57,6 +57,14 @@ export const Sidebar = ({ isOpen }: SidebarProps) => {
 
       <hr />
       <div>
+        <a
+          href="http://localhost:5555"
+          className="nav-link text-white"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Banco de dados
+        </a>
         <Link href="/api" className="nav-link text-white">
           Documentação da API
         </Link>

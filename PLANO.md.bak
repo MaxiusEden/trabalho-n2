@@ -1,0 +1,196 @@
+# Plano de trabalho — Perero Cursos
+
+Roteiro da etapa atual. Leia antes de começar qualquer coisa neste projeto.
+
+## O que este projeto é
+
+Plataforma de cursos e trilhas de aprendizado. Dois públicos: o **aluno**, que
+navega o catálogo e se matricula, e o **admin**, que gerencia cursos, trilhas,
+usuários e matrículas.
+
+História: começou como `trabalho-n2` (React + Vite + json-server), foi reescrito em
+Next.js + Prisma, e agora migra para **NestJS + PostgreSQL + Docker**, que é o
+trabalho do semestre atual. É o mesmo projeto evoluindo, não três projetos.
+
+A especificação da etapa atual é o PDF *CRUD - NestJS*. O que ele exige, e que
+precisa estar na entrega:
+
+- NestJS com um recurso gerado por `nest generate resource` (REST API, com os
+  entry points do CRUD).
+- Prisma 7 com `generator client { provider = "prisma-client" }`, cliente gerado em
+  `src/generated/prisma`, e o driver adapter `@prisma/adapter-pg`.
+- `PrismaService` estendendo `PrismaClient`, criado com `new PrismaPg({ connectionString })`,
+  exportado por um `PrismaModule` e importado pelo módulo do recurso.
+- Services com `create`, `findAll`, `findOne`, `update`, `remove`.
+- DTOs com `class-validator` e `ValidationPipe` global no `main.ts`.
+- Swagger com `DocumentBuilder`, `@ApiProperty` nos DTOs, `@ApiTags`,
+  `@ApiOperation` e `@ApiResponse` no controller, servido em `/api`.
+
+## Estado verificado (21/09/2026)
+
+Conferido no repositório local, não suposto:
+
+- **O código não compila.** `npx tsc --noEmit` dá 59 erros. O `schema.prisma` foi
+  reescrito (modificado, não commitado) para o modelo do LAB03, com 14 modelos em
+  português (`Usuario`, `Curso`, `Modulo`, `Aula`, `Matricula`, `Trilha`,
+  `TrilhaCurso`, `Certificado`, `Plano`, `Assinatura`, `Pagamento`...), mas o
+  `seed.ts`, os services e as páginas ainda usam os nomes antigos (`user`,
+  `course`, `lesson`, `title`, `id`).
+- **`src/lib/users/users.service.ts` foi apagado** no working tree e ainda é
+  importado por 5 arquivos (`admin/usuarios`, `admin/matriculas`, `api/login`,
+  `api/users`, `api/users/[id]`).
+- **Etapa 1 (higiene) está quase feita:** `.agents/`, `.windsurf/`,
+  `.claude/skills/` e `.claude/settings.local.json` já estão no `.gitignore` e fora
+  do índice; o remote `origin` já aponta para `trabalho-n2` e a história antiga
+  está preservada. Falta um ponto (ver etapa 1).
+- **O Prisma já está na versão 7** com driver adapter (`@prisma/adapter-better-sqlite3`)
+  e `prisma.config.ts` com a URL do banco. Ou seja, o projeto já segue o formato do
+  PDF; a troca para Postgres é trocar adapter e provider, não reescrever a camada.
+- **A regra da costura está sendo cumprida:** o único `fetch` do `src/` está em
+  `src/lib/api-client.ts`.
+
+## Decisões já tomadas
+
+- **Vai para NestJS de verdade**, não a tradução em Next.js que existe hoje.
+- **Monorepo**, com os dois lados na raiz do repositório:
+
+```
+api/    NestJS + Prisma + Swagger — dono do banco
+web/    Next.js, o frontend
+docker-compose.yml
+README.md
+```
+
+- **A história do Git é preservada.** Nada de `--force`. Os commits do React+Vite
+  ficam, e a evolução aparece no log.
+- **O redesenho visual acontece antes da migração do backend**, porque a camada de
+  apresentação sobrevive à troca de backend (ver a regra da costura abaixo).
+
+## Regra da costura (a mais importante)
+
+Todo HTTP de formulário passa por **`api-client.ts`** (`apiFetch`). Hoje o arquivo
+está em `src/lib/api-client.ts`; depois do monorepo, em `web/src/lib/api-client.ts`.
+É isso que permite trocar o backend mexendo em um arquivo só.
+
+Enquanto o backend não migrar:
+
+- **Nenhum `fetch` novo fora do `api-client.ts`.** Nem em componente, nem em página.
+- Se um componente precisa de dado, ele chama uma função que passa pelo cliente.
+- Quebrar essa regra transforma a migração em retrabalho espalhado.
+
+## Sequência, com um commit por etapa
+
+0. **Fechar a troca de schema (bloqueia todo o resto).** Decidir se o schema do
+   LAB03 (14 modelos, português) é o definitivo. Se for: atualizar `seed.ts`, DTOs,
+   services e páginas para os nomes novos, recriar o `users.service.ts`, e só
+   commitar com `npm run typecheck` sem erro. Se não for: `git restore` no schema e
+   no service. Não começar o redesenho com o projeto quebrado.
+1. **Higiene do repositório.** O que falta: tirar `skills-lock.json` do `.gitignore`
+   e versioná-lo. A lógica de "skills são regeneráveis a partir do lock" só funciona
+   se o lock estiver no repositório, igual ao `package-lock.json` (restaurar com
+   `npx skills experimental_install`). `AGENTS.md`, `CLAUDE.md` e `PLANO.md` seguem
+   fora do Git, por escolha.
+2. **Redesenho do frontend.** Só apresentação: tokens, tipografia, layout,
+   componentes, estados. Hoje o visual é Bootstrap 5 sem tratamento e o
+   `globals.css` tem 280 bytes, sem token nenhum. Decidir se mantém Bootstrap com
+   tema próprio ou sai dele, com razão declarada. Rodar o react-doctor antes do
+   commit.
+3. **Scaffold do NestJS em `api/`.** `nest new api`, depois `nest generate module prisma`,
+   `nest generate service prisma` e `nest generate resource <recurso>` (REST API, com
+   CRUD) para cada recurso. Seguir o PDF:
+   - `PrismaService extends PrismaClient`, com `PrismaPg` no construtor e
+     `import 'dotenv/config'` no topo.
+   - `PrismaModule` com `exports: [PrismaService]`; cada módulo de recurso com
+     `imports: [PrismaModule]`.
+   - Services recebem `PrismaService` no construtor, no lugar do singleton de
+     `src/lib/prisma.ts` (o singleton com `globalThis` era só para o hot reload do
+     Next e não vai para o Nest).
+   - Portar os DTOs (já são `class-validator`) e o schema. Cliente gerado em
+     `api/src/generated/prisma`.
+   - Mover `prisma.config.ts`, `prisma/` e o seed para dentro de `api/`.
+   - Mover o frontend para `web/`, junto com o `AGENTS.md`: ele é do Next e aponta
+     para `node_modules/next` relativo ao próprio diretório. O `CLAUDE.md` da raiz
+     passa a importar `@web/AGENTS.md`.
+4. **PostgreSQL em Docker.** Trocar `provider = "sqlite"` por `"postgresql"`, trocar
+   `@prisma/adapter-better-sqlite3` por `@prisma/adapter-pg`, apagar
+   `prisma/migrations/`, gerar a migration nova com `npx prisma migrate dev --name init`,
+   rodar `npx prisma generate` e o seed. O `prisma.config.ts` continua sendo o lugar
+   da `DATABASE_URL`.
+5. **Validação, erros e Swagger.**
+   - `app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))`.
+     O PDF usa `new ValidationPipe()` sem opções; o `whitelist` é acréscimo nosso,
+     para que um campo extra no corpo (ex.: `papel: "admin"`) seja rejeitado em vez
+     de ir parar no banco.
+   - `ParseIntPipe` nos `:id` em vez do `+id` do PDF: id não numérico vira 400, e
+     não uma consulta com `NaN`.
+   - Erros do Prisma viram HTTP: `P2002` (unique, ex.: matrícula duplicada, e-mail
+     repetido) → 409; `P2025` (registro não existe no update/delete) → 404;
+     `findOne` que devolve `null` → 404. Sem isso, a API responde 500. O próprio PDF
+     termina apontando esse problema.
+   - Swagger: `DocumentBuilder` no `main.ts`, `SwaggerModule.setup('api', ...)`,
+     `@ApiTags`, `@ApiOperation` e `@ApiResponse` no controller, plugin
+     `@nestjs/swagger` no `nest-cli.json`. Com o plugin ligado, `@ApiProperty` só é
+     necessário onde se quer `example` ou `description`.
+   - Não usar `app.setGlobalPrefix('api')`: as rotas colidiriam com o Swagger em `/api`.
+6. **Segurança.** Hash de senha e sessão de verdade (ver dívida abaixo).
+7. **Religar.** Apontar o `web/src/lib/api-client.ts` para a API do Nest, com CORS
+   liberado só para a origem do frontend.
+
+## O que já está pronto e migra sem drama
+
+Vale só depois da etapa 0.
+
+- **DTOs** — já usam `reflect-metadata`, `class-validator` e `class-transformer`,
+  com `@ValidateNested` e `@Type`. São NestJS nativo. Precisam acompanhar os nomes
+  do schema novo.
+- **Configuração do Prisma 7** — generator `prisma-client`, saída em
+  `src/generated/prisma`, `moduleFormat = "cjs"`, driver adapter e
+  `prisma.config.ts`. Já é o formato do PDF.
+- **Restrições do schema** — `@@unique([idUsuario, idCurso])` em `Matricula` impede
+  matrícula duplicada no banco; `@@unique` de `ordem` em `Modulo`, `Aula` e
+  `TrilhaCurso`; cascata nas tabelas filhas; `SetNull` em instrutor, categoria e
+  trilha do certificado; `Restrict` no plano da assinatura.
+
+## Dívida conhecida (não entra assim na entrega)
+
+Documentada no README e ainda aberta:
+
+- **Dinheiro em `Float`.** `Curso.preco` e `Pagamento.valorPago` são `Float`, que
+  arredonda. Trocar para `Int` em centavos ou `Decimal` antes da migration do
+  Postgres, porque depois vira migration de dados.
+- **Senha.** O campo agora se chama `senhaHash`, mas o nome não faz o hash. Gravar
+  com argon2 ou bcrypt e comparar com a função do próprio pacote no login.
+- **Senha na resposta.** O `findAll` do PDF devolve o usuário inteiro, com senha.
+  Nenhuma rota devolve `senhaHash`: usar `omit` do Prisma ou `select` explícito.
+- **Sessão.** Login não emite cookie nem token. Hoje a "sessão" é o usuário em
+  `localStorage` (`src/lib/session.ts`), que qualquer um edita no navegador.
+- **Autorização.** `/admin` e as rotas de API **não são protegidas**. Autorização é
+  verificada no servidor a cada requisição (guard do Nest), não escondendo botão no
+  frontend.
+
+## Armadilhas da etapa de Docker
+
+- **Senha do Postgres no `docker-compose.yml`** vai por `env_file` ou variável,
+  nunca literal. O compose é versionado; o `.env` não é (o `.gitignore` já ignora
+  `.env*`; conferir que continua valendo dentro de `api/`).
+- **`DATABASE_URL` muda de host conforme onde o Nest roda.** Dentro do compose, o
+  host é o nome do serviço (`db`). Rodando fora, é `localhost:5432`. Duas URLs para
+  o mesmo banco.
+- **As migrations do SQLite não servem no Postgres.** Apagar `prisma/migrations/` e
+  gerar de novo. Não adaptar o SQL à mão.
+- **`prisma migrate dev` pode resetar o banco** quando detecta divergência. Rodar o
+  seed de novo depois, e nunca apontar esse comando para um banco com dado que
+  importa.
+
+## Onde estão as regras de qualidade
+
+Este arquivo é o plano deste projeto. As regras gerais de design, de entrega e de
+segurança ficam no vault, em `C:\Users\filip\Downloads\Diversos\CLAUDE\`:
+
+- `design-evitar.md` — o que denuncia projeto gerado por IA.
+- `design-processo.md` — método de decisão visual e piso de qualidade.
+- `entrega-checklist.md` — conferência antes de publicar, incluindo a seção de
+  segredos e dados no navegador, que é a mais relevante para a etapa de backend.
+
+Ler os dois primeiros antes de escrever qualquer UI. Rodar o terceiro antes de
+entregar.
