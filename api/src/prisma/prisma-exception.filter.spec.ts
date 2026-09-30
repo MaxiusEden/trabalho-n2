@@ -58,7 +58,11 @@ describe('PrismaExceptionFilter', () => {
     expect(run(prismaError('P2025')).status).toBe(404);
   });
 
+  it('P2003 (referência a registro inexistente) vira 400', () => {
+    expect(run(prismaError('P2003')).status).toBe(400);
+  });
+
   it('outros códigos continuam 500', () => {
-    expect(run(prismaError('P2003')).status).toBe(500);
+    expect(run(prismaError('P2034')).status).toBe(500);
   });
 });

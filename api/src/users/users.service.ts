@@ -31,14 +31,31 @@ export class UsersService {
     });
   }
 
+  // Mesmo formato que o web/ usa na tela de usuários: com a contagem de matrículas.
   findAll() {
-    return this.prisma.user.findMany({ omit: semSenha });
+    return this.prisma.user.findMany({
+      omit: semSenha,
+      include: { _count: { select: { enrollments: true } } },
+      orderBy: { id: 'asc' },
+    });
   }
 
+  // Mesmo formato do web/: com a contagem e as matrículas do usuário.
   async findOne(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       omit: semSenha,
+      include: {
+        _count: { select: { enrollments: true } },
+        enrollments: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            createdAt: true,
+            course: { select: { id: true, title: true, priceCents: true } },
+          },
+        },
+      },
     });
     if (!user) throw new NotFoundException('Usuário não encontrado');
     return user;

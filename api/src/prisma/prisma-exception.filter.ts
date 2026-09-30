@@ -1,5 +1,6 @@
 import {
   ArgumentsHost,
+  BadRequestException,
   Catch,
   ConflictException,
   ExceptionFilter,
@@ -11,7 +12,8 @@ import { Response } from 'express';
 import { Prisma } from '../generated/prisma/client';
 
 // Converte os erros conhecidos do Prisma em respostas HTTP, no lugar do 500
-// padrão: P2002 (valor único repetido) → 409 e P2025 (registro não existe) → 404.
+// padrão: P2002 (valor único repetido) → 409, P2025 (registro não existe) → 404 e
+// P2003 (chave estrangeira aponta para registro inexistente) → 400.
 @Catch(Prisma.PrismaClientKnownRequestError)
 export class PrismaExceptionFilter implements ExceptionFilter {
   catch(exception: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
@@ -37,6 +39,10 @@ function toHttpException(
     }
     case 'P2025':
       return new NotFoundException('Registro não encontrado');
+    case 'P2003':
+      return new BadRequestException(
+        'Relacionamento inválido: o registro referenciado não existe',
+      );
     default:
       return new InternalServerErrorException();
   }

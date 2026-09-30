@@ -9,9 +9,10 @@ web/    Next.js (App Router), o frontend
 docs/   PDFs da disciplina e diagramas
 ```
 
-A migração está em andamento: a `api/` tem por enquanto só o recurso `users`, e o
-`web/` ainda usa as próprias Route Handlers e um banco SQLite. Os dois bancos são
-separados até o `web/` passar a consumir a API do Nest.
+A migração está em andamento: a `api/` já tem todos os recursos (usuários, login
+JWT, trilhas, cursos com aulas e matrículas), mas o `web/` ainda usa as próprias
+Route Handlers e um banco SQLite. Os dois bancos são separados até o `web/` passar
+a consumir a API do Nest.
 
 | Pasta  | Porta | Endereço                                       |
 | ------ | ----- | ---------------------------------------------- |
@@ -26,38 +27,50 @@ banco `DBdev` com o usuário e a senha do seu Postgres:
 
 ```
 DATABASE_URL="postgresql://USUARIO:SENHA@localhost:5432/DBdev?schema=public"
+JWT_SECRET="<chave longa e aleatória>"
 ```
+
+Sem `JWT_SECRET` a API não sobe, de propósito (PDF "JWT - Autenticação").
 
 ```bash
 cd api
 npm install
 npx prisma migrate dev
 npx prisma generate
+npm run db:seed
 npm run start:dev
 ```
 
-O `migrate dev` cria o banco `DBdev` se ele não existir. A documentação interativa
-fica em <http://localhost:3000/api>.
+O `migrate dev` cria o banco `DBdev` se ele não existir. O seed cria o catálogo
+(2 trilhas, 3 cursos, 12 aulas) e dois usuários com a senha em bcrypt
+(`aluno@perero.com` e `joao@email.com`, senha `senha123`); usuário que já existe
+não é alterado. A documentação interativa fica em <http://localhost:3000/api>:
+faça login em `POST /auth/login`, cole o `access_token` em "Authorize" e as rotas
+protegidas passam a responder.
 
 A `api/` usa **NestJS 11 de propósito**: é a versão do template que os PDFs da
 disciplina seguem (CommonJS, imports sem extensão, ESLint, Jest). O template do
 Nest 12 é ESM e quebra o `moduleFormat = "cjs"` do Prisma que o PDF pede. Os
 geradores rodam com o CLI local: `npx nest generate ...` dentro de `api/`.
 
-| Rota                 | O que faz               |
-| -------------------- | ----------------------- |
-| `POST /users`        | Cria um usuário         |
-| `GET /users`         | Lista os usuários       |
-| `GET /users/:id`     | Busca um usuário        |
-| `PATCH /users/:id`   | Atualiza um usuário     |
-| `DELETE /users/:id`  | Remove um usuário       |
+| Rota                                        | Acesso                     |
+| ------------------------------------------- | -------------------------- |
+| `POST /auth/login`                          | público; devolve o token   |
+| `POST /users`                               | público (cadastro)         |
+| `GET`, `PATCH`, `DELETE /users[/:id]`       | com token                  |
+| `GET /trilhas[/:id]`, `GET /courses[/:id]`  | público (catálogo)         |
+| `POST`, `PATCH`, `DELETE` de trilhas e cursos | com token                |
+| `/enrollments` (todas)                      | com token; a matrícula é do dono do token |
+
+- A senha é gravada com bcrypt e nunca sai nas respostas.
+- Erros: dados inválidos ou campo extra no corpo → 400; id não numérico → 400;
+  registro inexistente → 404; e-mail repetido ou matrícula duplicada → 409;
+  referência a trilha ou curso inexistente → 400.
+- Limitação conhecida: não há perfis. Qualquer usuário logado edita o catálogo e
+  lista ou cancela matrículas de outros.
 
 Scripts (dentro de `api/`): `npm run start:dev`, `npm run build`,
-`npm run typecheck`, `npm run lint`, `npm test`.
-
-Como no PDF, a senha ainda é gravada e devolvida em texto puro, e e-mail repetido
-devolve 500. As próximas etapas tratam isso (erros do Prisma, `omit` da senha e
-bcrypt).
+`npm run typecheck`, `npm run lint`, `npm test`, `npm run db:seed`.
 
 ## web/ — frontend Next.js
 

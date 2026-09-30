@@ -8,6 +8,8 @@ datasource db {
   provider = "postgresql"
 }
 
+/// Usuário: o model do PDF "CRUD - NestJS". A única adição é a relação
+/// `enrollments`, que não cria coluna.
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -15,4 +17,66 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updateAt  DateTime @updatedAt()
+
+  enrollments Enrollment[]
+}
+
+/// Trilha de aprendizado. O número de módulos vem de `_count.courses`, nunca
+/// é armazenado.
+model Trilha {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses Course[]
+}
+
+/// Curso. Preço em centavos, para não ter erro de arredondamento.
+model Course {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  image       String
+  priceCents  Int
+  trilhaId    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  trilha      Trilha?      @relation(fields: [trilhaId], references: [id], onDelete: SetNull)
+  lessons     Lesson[]
+  enrollments Enrollment[]
+
+  @@index([trilhaId])
+}
+
+/// Aula do conteúdo programático de um curso.
+model Lesson {
+  id       Int    @id @default(autoincrement())
+  title    String
+  duration Int // duração em minutos
+  order    Int // posição da aula dentro do curso
+  courseId Int
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, order])
+  @@index([courseId])
+}
+
+/// Matrícula de um usuário em um curso. O índice único impede matrícula
+/// duplicada no próprio banco.
+model Enrollment {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  courseId  Int
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
 }
