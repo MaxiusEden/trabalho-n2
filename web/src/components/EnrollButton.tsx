@@ -3,14 +3,13 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { apiFetch, toMessages } from '@/lib/api-client';
+import { toMessages } from '@/lib/api-client';
+import { enrollmentsApi } from '@/lib/api';
 import { useSession } from '@/lib/session';
-
-type Enrollment = { id: number };
 
 /**
  * Botão "Matricular-se". Cria (e cancela) o registro de `Enrollment`,
- * que é a ponta da relação User ↔ Course.
+ * que é a ponta da relação User ↔ Course. O Nest tira o usuário do token.
  */
 export function EnrollButton({ courseId }: { courseId: number }) {
   const { user } = useSession();
@@ -41,7 +40,8 @@ function EnrollmentControl({ userId, courseId }: { userId: number; courseId: num
   useEffect(() => {
     let active = true;
 
-    apiFetch<Enrollment[]>(`/api/enrollments?userId=${userId}&courseId=${courseId}`)
+    enrollmentsApi
+      .list({ userId, courseId })
       .then((enrollments) => {
         if (active) setEnrollmentId(enrollments[0]?.id ?? null);
       })
@@ -62,10 +62,7 @@ function EnrollmentControl({ userId, courseId }: { userId: number; courseId: num
     setBusy(true);
     setError(null);
     try {
-      const enrollment = await apiFetch<Enrollment>('/api/enrollments', {
-        method: 'POST',
-        body: JSON.stringify({ userId, courseId }),
-      });
+      const enrollment = await enrollmentsApi.create(courseId);
       setEnrollmentId(enrollment.id);
       router.refresh();
     } catch (caught) {
@@ -80,7 +77,7 @@ function EnrollmentControl({ userId, courseId }: { userId: number; courseId: num
     setBusy(true);
     setError(null);
     try {
-      await apiFetch(`/api/enrollments/${enrollmentId}`, { method: 'DELETE' });
+      await enrollmentsApi.remove(enrollmentId);
       setEnrollmentId(null);
       router.refresh();
     } catch (caught) {

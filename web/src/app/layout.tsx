@@ -20,7 +20,7 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: 'Perero Cursos',
-  description: 'Plataforma de cursos com CRUD em Next.js + Prisma',
+  description: 'Plataforma de cursos: frontend em Next.js, API em NestJS',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

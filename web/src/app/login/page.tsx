@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { apiFetch, toMessages } from '@/lib/api-client';
-import { useSession, type SessionUser } from '@/lib/session';
+import { toMessages } from '@/lib/api-client';
+import { authApi } from '@/lib/api';
+import { useSession } from '@/lib/session';
+import { FormErrors } from '@/components/admin/FormErrors';
 
-/** Porte de `Login.tsx` — agora o formulário confere as credenciais no banco. */
+/** Login: `POST /auth/login` do Nest devolve o `access_token`, que fica na sessão. */
 export default function LoginPage() {
   const { user, signIn, signOut } = useSession();
   const router = useRouter();
@@ -22,11 +24,8 @@ export default function LoginPage() {
     setErrors([]);
 
     try {
-      const authenticated = await apiFetch<SessionUser>('/api/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
-      signIn(authenticated);
+      const { access_token } = await authApi.login({ email, password });
+      signIn(access_token);
       router.push('/');
     } catch (caught) {
       setErrors(toMessages(caught));
@@ -46,7 +45,7 @@ export default function LoginPage() {
             {user ? (
               <>
                 <p>
-                  Você já está conectado como <strong>{user.name ?? user.email}</strong>.
+                  Você já está conectado como <strong>{user.email}</strong>.
                 </p>
                 <button className="btn btn-outline-secondary w-100 mb-3" onClick={signOut}>
                   Sair
@@ -56,52 +55,50 @@ export default function LoginPage() {
                 </Link>
               </>
             ) : (
-              <form onSubmit={handleSubmit}>
-                {errors.length > 0 && (
-                  <div className="alert alert-danger">
-                    <ul className="mb-0 ps-3">
-                      {errors.map((message) => (
-                        <li key={message}>{message}</li>
-                      ))}
-                    </ul>
+              <>
+                <form onSubmit={handleSubmit}>
+                  <FormErrors messages={errors} />
+
+                  <div className="mb-3">
+                    <label className="form-label" htmlFor="login-email">
+                      E-mail
+                    </label>
+                    <input
+                      id="login-email"
+                      type="email"
+                      className="form-control"
+                      placeholder="nome@email.com"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      required
+                    />
                   </div>
-                )}
 
-                <div className="mb-3">
-                  <label className="form-label" htmlFor="login-email">
-                    E-mail
-                  </label>
-                  <input
-                    id="login-email"
-                    type="email"
-                    className="form-control"
-                    placeholder="nome@email.com"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    required
-                  />
-                </div>
+                  <div className="mb-3">
+                    <label className="form-label" htmlFor="login-password">
+                      Senha
+                    </label>
+                    <input
+                      id="login-password"
+                      type="password"
+                      className="form-control"
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      required
+                    />
+                  </div>
 
-                <div className="mb-3">
-                  <label className="form-label" htmlFor="login-password">
-                    Senha
-                  </label>
-                  <input
-                    id="login-password"
-                    type="password"
-                    className="form-control"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    required
-                  />
-                </div>
+                  <button type="submit" className="btn btn-primary w-100" disabled={busy}>
+                    {busy ? 'Entrando...' : 'Entrar'}
+                  </button>
+                </form>
 
-                <button type="submit" className="btn btn-primary w-100" disabled={busy}>
-                  {busy ? 'Entrando...' : 'Entrar'}
-                </button>
-              </form>
+                <p className="small text-muted mt-3 mb-0">
+                  Ainda não tem conta? <Link href="/cadastro">Criar conta</Link>
+                </p>
+              </>
             )}
           </div>
         </div>

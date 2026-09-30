@@ -1,36 +1,35 @@
 # Perero Cursos
 
 Plataforma de cursos e trilhas de aprendizado. O repositório é um monorepo; cada
-pasta tem o seu `package.json` e roda sozinha:
+pasta tem o seu `package.json`:
 
 ```
-api/    NestJS 11 + Prisma + PostgreSQL + Swagger — segue o PDF "CRUD - NestJS"
-web/    Next.js (App Router), o frontend
+api/    NestJS 11 + Prisma + PostgreSQL + Swagger + JWT — dona do banco
+web/    Next.js (App Router), o frontend; consome a api/
 docs/   PDFs da disciplina e diagramas
 ```
-
-A migração está em andamento: a `api/` já tem todos os recursos (usuários, login
-JWT, trilhas, cursos com aulas e matrículas), mas o `web/` ainda usa as próprias
-Route Handlers e um banco SQLite. Os dois bancos são separados até o `web/` passar
-a consumir a API do Nest.
 
 | Pasta  | Porta | Endereço                                       |
 | ------ | ----- | ---------------------------------------------- |
 | `api/` | 3000  | <http://localhost:3000/api> (Swagger)          |
 | `web/` | 3001  | <http://localhost:3001>                        |
+| `api/` | 5555  | <http://localhost:5555> (Prisma Studio, `npm run db:studio`) |
 
-## api/ — NestJS
+O `web/` não tem banco próprio: todas as telas leem e gravam pela API do Nest, que
+grava no PostgreSQL. O login do site é o mesmo `POST /auth/login` do Swagger.
 
-Precisa de um PostgreSQL local em `localhost:5432`. Crie `api/.env` (fora do Git)
-com a `DATABASE_URL` da seção 2 do PDF (`docs/CRUD - NestJS.pdf`), apontando para o
-banco `DBdev` com o usuário e a senha do seu Postgres:
+## Como rodar
+
+Precisa de um PostgreSQL local em `localhost:5432`. São dois terminais.
+
+**1. API** — crie `api/.env` (fora do Git) com a `DATABASE_URL` da seção 2 do PDF
+(`docs/CRUD - NestJS.pdf`), apontando para o banco `DBdev` com o usuário e a senha
+do seu Postgres, e um `JWT_SECRET`:
 
 ```
 DATABASE_URL="postgresql://USUARIO:SENHA@localhost:5432/DBdev?schema=public"
 JWT_SECRET="<chave longa e aleatória>"
 ```
-
-Sem `JWT_SECRET` a API não sobe, de propósito (PDF "JWT - Autenticação").
 
 ```bash
 cd api
@@ -41,105 +40,89 @@ npm run db:seed
 npm run start:dev
 ```
 
-O `migrate dev` cria o banco `DBdev` se ele não existir. O seed cria o catálogo
-(2 trilhas, 3 cursos, 12 aulas) e dois usuários com a senha em bcrypt
-(`aluno@perero.com` e `joao@email.com`, senha `senha123`); usuário que já existe
-não é alterado. A documentação interativa fica em <http://localhost:3000/api>:
-faça login em `POST /auth/login`, cole o `access_token` em "Authorize" e as rotas
-protegidas passam a responder.
+**2. Frontend**:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+O `web/` chama a API em `http://localhost:3000`. Para outro endereço, defina
+`NEXT_PUBLIC_API_URL` em `web/.env`.
+
+## Roteiro de demonstração
+
+1. **Plataforma funcionando**: em <http://localhost:3001>, "Entrar" → "Criar conta".
+   O cadastro chama `POST /users` e já faz o login. Abrir um curso e clicar em
+   "Matricular-se".
+2. **Dados salvos na persistência**: `npm run db:studio` dentro de `api/` abre o
+   Prisma Studio com as tabelas do PostgreSQL. O usuário novo aparece em `User`,
+   com a senha em hash bcrypt (`$2b$10$...`), e a matrícula aparece em `Enrollment`.
+   O mesmo aparece no site em Administração → Matrículas.
+3. **Token no Swagger**: em <http://localhost:3000/api>, `GET /users` sem token dá
+   401. `POST /auth/login` com o usuário criado no passo 1 devolve o
+   `access_token`; colar em "Authorize" e repetir o `GET /users`: 200.
+
+Usuários do seed: `aluno@perero.com` e `joao@email.com`, senha `senha123` (dados de
+demonstração; usuário que já existe não é alterado pelo seed).
+
+## api/ — NestJS
 
 A `api/` usa **NestJS 11 de propósito**: é a versão do template que os PDFs da
 disciplina seguem (CommonJS, imports sem extensão, ESLint, Jest). O template do
 Nest 12 é ESM e quebra o `moduleFormat = "cjs"` do Prisma que o PDF pede. Os
-geradores rodam com o CLI local: `npx nest generate ...` dentro de `api/`.
+geradores rodam com o CLI local: `npx nest generate ...` dentro de `api/`. Sem
+`JWT_SECRET` a API não sobe, de propósito (PDF "JWT - Autenticação").
 
-| Rota                                        | Acesso                     |
-| ------------------------------------------- | -------------------------- |
-| `POST /auth/login`                          | público; devolve o token   |
-| `POST /users`                               | público (cadastro)         |
-| `GET`, `PATCH`, `DELETE /users[/:id]`       | com token                  |
-| `GET /trilhas[/:id]`, `GET /courses[/:id]`  | público (catálogo)         |
-| `POST`, `PATCH`, `DELETE` de trilhas e cursos | com token                |
-| `/enrollments` (todas)                      | com token; a matrícula é do dono do token |
+| Rota                                          | Acesso                                    |
+| --------------------------------------------- | ----------------------------------------- |
+| `POST /auth/login`                            | público; devolve o token                  |
+| `POST /users`                                 | público (cadastro)                        |
+| `GET`, `PATCH`, `DELETE /users[/:id]`         | com token                                 |
+| `GET /trilhas[/:id]`, `GET /courses[/:id]`    | público (catálogo)                        |
+| `POST`, `PATCH`, `DELETE` de trilhas e cursos | com token                                 |
+| `/enrollments` (todas)                        | com token; a matrícula é do dono do token |
 
 - A senha é gravada com bcrypt e nunca sai nas respostas.
 - Erros: dados inválidos ou campo extra no corpo → 400; id não numérico → 400;
   registro inexistente → 404; e-mail repetido ou matrícula duplicada → 409;
   referência a trilha ou curso inexistente → 400.
+- CORS liberado só para o frontend (`http://localhost:3001`).
 - Limitação conhecida: não há perfis. Qualquer usuário logado edita o catálogo e
   lista ou cancela matrículas de outros.
 
 Scripts (dentro de `api/`): `npm run start:dev`, `npm run build`,
-`npm run typecheck`, `npm run lint`, `npm test`, `npm run db:seed`.
+`npm run typecheck`, `npm run lint`, `npm test`, `npm run db:seed`,
+`npm run db:studio`.
 
 ## web/ — frontend Next.js
 
-```bash
-cd web
-npm install
-npm run setup
-npm run dev
-```
+Todo HTTP passa por [`web/src/lib/api-client.ts`](web/src/lib/api-client.ts), o único
+`fetch` do frontend; as rotas tipadas ficam em [`web/src/lib/api.ts`](web/src/lib/api.ts).
 
-`setup` aplica as migrations, gera o Prisma Client e popula o banco. A aplicação sobe
-em <http://localhost:3001>.
+- **Sessão**: o `access_token` do `POST /auth/login` fica num cookie com a validade
+  do token (1h). O navegador o envia como `Authorization: Bearer` nas chamadas ao
+  Nest, e as páginas do servidor fazem o mesmo com o token lido do cookie. Sair
+  apaga o token. Um 401 da API manda para `/login`.
+- **Administração**: as páginas de `/admin` exigem login.
 
-O banco do `web/` é um **SQLite em arquivo** (`web/prisma/dev.db`). A conexão fica em
-`web/.env`:
+| Rota                  | O que é                                                   |
+| --------------------- | --------------------------------------------------------- |
+| `/`                   | Catálogo de cursos                                        |
+| `/curso/[id]`         | Detalhe do curso, conteúdo programático e matrícula       |
+| `/trilhas`            | Trilhas de aprendizado                                    |
+| `/trilhas/[id]`       | Cursos de uma trilha                                      |
+| `/login`, `/cadastro` | Login (`POST /auth/login`) e cadastro (`POST /users`)     |
+| `/admin/usuarios`     | CRUD de usuários                                          |
+| `/admin/cursos`       | CRUD de cursos, com trilha e aulas                        |
+| `/admin/trilhas`      | CRUD de trilhas                                           |
+| `/admin/matriculas`   | Consulta e cancelamento de matrículas                     |
 
-```
-DATABASE_URL="file:./prisma/dev.db"
-```
+Scripts (dentro de `web/`): `npm run dev` (porta 3001), `npm run build`,
+`npm start`, `npm run typecheck`, `npm run lint`.
 
-O CRUD segue a estrutura do PDF *CRUD - NestJS*, com cada camada do NestJS traduzida
-para o equivalente do Next.js:
-
-| PDF (NestJS)                          | Aqui (Next.js)                                               |
-| ------------------------------------- | ------------------------------------------------------------ |
-| `PrismaService`                       | [`web/src/lib/prisma.ts`](web/src/lib/prisma.ts) (singleton)  |
-| DTOs com `class-validator`            | `web/src/lib/<recurso>/dto/*.dto.ts`                          |
-| `ValidationPipe` global               | [`validateDto`](web/src/lib/http/validation.ts)               |
-| `UsersService`                        | `web/src/lib/<recurso>/*.service.ts`                          |
-| `UsersController` (REST)              | Route Handlers em `web/src/app/api/**/route.ts`               |
-| Swagger em `/api`                     | Documentação da API em `/api`                                 |
-
-### Usuários semeados
-
-| E-mail             | Senha      |
-| ------------------ | ---------- |
-| `aluno@perero.com` | `senha123` |
-| `joao@email.com`   | `senha123` |
-
-### Scripts (dentro de `web/`)
-
-| Script               | O que faz                                          |
-| -------------------- | -------------------------------------------------- |
-| `npm run dev`        | Servidor de desenvolvimento na porta 3001          |
-| `npm run build`      | Build de produção                                  |
-| `npm start`          | Sobe o build de produção na porta 3001             |
-| `npm run typecheck`  | `tsc --noEmit`                                     |
-| `npm run lint`       | ESLint                                             |
-| `npm run db:migrate` | Cria/aplica migrations (`prisma migrate dev`)      |
-| `npm run db:seed`    | Popula o banco                                     |
-| `npm run db:reset`   | Apaga o banco, reaplica as migrations e re-semeia  |
-| `npm run db:studio`  | Abre o Prisma Studio                               |
-
-### Telas
-
-| Rota                  | O que é                                                          |
-| --------------------- | ---------------------------------------------------------------- |
-| `/`                   | Catálogo de cursos                                               |
-| `/curso/[id]`         | Detalhe do curso, conteúdo programático e matrícula              |
-| `/trilhas`            | Trilhas de aprendizado                                           |
-| `/trilhas/[id]`       | Cursos de uma trilha                                             |
-| `/login`              | Login conferido contra a tabela `User`                           |
-| `/admin/usuarios`     | CRUD de usuários                                                 |
-| `/admin/cursos`       | CRUD de cursos, com trilha e aulas                               |
-| `/admin/trilhas`      | CRUD de trilhas                                                  |
-| `/admin/matriculas`   | CRUD de matrículas                                               |
-| `/api`                | Documentação da API                                              |
-
-### Modelo de dados
+## Modelo de dados
 
 ```
 User 1──n Enrollment n──1 Course n──1 Trilha
@@ -148,18 +131,11 @@ User 1──n Enrollment n──1 Course n──1 Trilha
 ```
 
 - `User.email` é único.
-- `Enrollment` tem índice único em `(userId, courseId)` — o banco impede matrícula duplicada.
+- `Enrollment` tem índice único em `(userId, courseId)`: o banco impede matrícula duplicada.
 - `Lesson` tem índice único em `(courseId, order)`; a ordem vem da posição no formulário.
 - Apagar um curso apaga aulas e matrículas em cascata.
 - Apagar uma trilha **não** apaga os cursos: eles ficam com `trilhaId = null`.
-- O "Módulos: N" das trilhas é derivado da contagem de cursos, nunca armazenado.
-
-### Observação de segurança
-
-Seguindo o PDF, a senha é gravada **em texto puro** (`data: createUserDto`). Ela nunca é
-devolvida pela API, mas antes de usar isso para valer o `password` precisa passar por hash.
-O login também é apenas uma conferência de credenciais: não emite cookie de sessão nem
-token, e as rotas de `/admin` e da API não são protegidas.
+- O número de cursos de uma trilha é derivado da contagem, nunca armazenado.
 
 ## VS Code
 

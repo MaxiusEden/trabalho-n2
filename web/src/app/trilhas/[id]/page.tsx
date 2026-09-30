@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { trilhasService } from '@/lib/trilhas/trilhas.service';
-import { NotFoundError } from '@/lib/http/errors';
+import { trilhasApi } from '@/lib/api';
+import { handlePageError } from '@/lib/server-session';
 import { formatCount } from '@/lib/format';
 import { CourseCard } from '@/components/CourseCard';
 import { EmptyState } from '@/components/EmptyState';
@@ -15,10 +15,7 @@ export default async function TrilhaDetailsPage({ params }: PageProps<'/trilhas/
   const trilhaId = Number(id);
   if (!Number.isInteger(trilhaId) || trilhaId < 1) notFound();
 
-  const trilha = await trilhasService.findOne(trilhaId).catch((error) => {
-    if (error instanceof NotFoundError) notFound();
-    throw error;
-  });
+  const trilha = await trilhasApi.get(trilhaId).catch(handlePageError);
 
   return (
     <div className="container">

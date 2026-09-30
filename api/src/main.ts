@@ -7,6 +7,9 @@ import { PrismaExceptionFilter } from './prisma/prisma-exception.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Acréscimo ao PDF: libera o frontend Next (porta 3001) a chamar a API pelo navegador.
+  app.enableCors({ origin: 'http://localhost:3001' });
+
   // Ativa validação dos DTOs. Acréscimo ao PDF: campos fora do DTO dão 400.
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),

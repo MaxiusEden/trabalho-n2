@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { BookOpen, Menu, X } from 'lucide-react';
 import { useSession } from '@/lib/session';
@@ -17,6 +17,14 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { user, signOut } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
+
+  // Sem o token, as páginas de /admin mandam para o login na nova renderização.
+  function handleSignOut() {
+    signOut();
+    setMenuOpen(false);
+    router.refresh();
+  }
 
   const links = (
     <ul className="site-nav">
@@ -36,8 +44,8 @@ export function SiteHeader() {
 
   const account = user ? (
     <>
-      <span className="small text-muted text-truncate">{user.name ?? user.email}</span>
-      <button type="button" className="btn btn-sm btn-outline-secondary" onClick={signOut}>
+      <span className="small text-muted text-truncate">{user.email}</span>
+      <button type="button" className="btn btn-sm btn-outline-secondary" onClick={handleSignOut}>
         Sair
       </button>
     </>

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { trilhasService } from '@/lib/trilhas/trilhas.service';
+import { trilhasApi } from '@/lib/api';
 import { formatCount } from '@/lib/format';
 import { EmptyState } from '@/components/EmptyState';
 
@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 /** Porte de `Trilhas.tsx`. O total é a contagem real de cursos da trilha. */
 export default async function TrilhasPage() {
-  const trilhas = await trilhasService.findAll();
+  const trilhas = await trilhasApi.list();
 
   return (
     <div className="container">

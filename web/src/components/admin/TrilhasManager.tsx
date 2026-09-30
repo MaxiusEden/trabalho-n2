@@ -3,16 +3,10 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { apiFetch, toMessages } from '@/lib/api-client';
+import { toMessages } from '@/lib/api-client';
+import { trilhasApi, type Trilha as AdminTrilha } from '@/lib/api';
 import { formatCount } from '@/lib/format';
 import { FormErrors } from './FormErrors';
-
-export type AdminTrilha = {
-  id: number;
-  title: string;
-  description: string;
-  _count: { courses: number };
-};
 
 const EMPTY_FORM = { title: '', description: '' };
 
@@ -46,13 +40,10 @@ export function TrilhasManager({ trilhas }: { trilhas: AdminTrilha[] }) {
 
     try {
       if (editingId === null) {
-        await apiFetch('/api/trilhas', { method: 'POST', body: JSON.stringify(form) });
+        await trilhasApi.create(form);
         setNotice('Trilha criada com sucesso.');
       } else {
-        await apiFetch(`/api/trilhas/${editingId}`, {
-          method: 'PATCH',
-          body: JSON.stringify(form),
-        });
+        await trilhasApi.update(editingId, form);
         setNotice('Trilha atualizada com sucesso.');
       }
 
@@ -80,7 +71,7 @@ export function TrilhasManager({ trilhas }: { trilhas: AdminTrilha[] }) {
     setNotice(null);
 
     try {
-      await apiFetch(`/api/trilhas/${trilha.id}`, { method: 'DELETE' });
+      await trilhasApi.remove(trilha.id);
       if (editingId === trilha.id) resetForm();
       setNotice('Trilha excluída com sucesso.');
       router.refresh();

@@ -1,23 +1,20 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Award, Clock, Users } from 'lucide-react';
-import { coursesService } from '@/lib/courses/courses.service';
-import { NotFoundError } from '@/lib/http/errors';
+import { coursesApi } from '@/lib/api';
+import { handlePageError } from '@/lib/server-session';
 import { formatCount, formatDuration, formatPrice } from '@/lib/format';
 import { EnrollButton } from '@/components/EnrollButton';
 
 export const dynamic = 'force-dynamic';
 
-/** Detalhe do curso — porte de `CourseDetails.tsx`, com dados reais do banco. */
+/** Detalhe do curso: `GET /courses/:id` do Nest (público). */
 export default async function CourseDetailsPage({ params }: PageProps<'/curso/[id]'>) {
   const { id } = await params;
   const courseId = Number(id);
   if (!Number.isInteger(courseId) || courseId < 1) notFound();
 
-  const course = await coursesService.findOne(courseId).catch((error) => {
-    if (error instanceof NotFoundError) notFound();
-    throw error;
-  });
+  const course = await coursesApi.get(courseId).catch(handlePageError);
 
   const totalMinutes = course.lessons.reduce((sum, lesson) => sum + lesson.duration, 0);
 

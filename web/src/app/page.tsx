@@ -1,13 +1,13 @@
 import Link from 'next/link';
-import { coursesService } from '@/lib/courses/courses.service';
+import { coursesApi } from '@/lib/api';
 import { CourseCard } from '@/components/CourseCard';
 import { EmptyState } from '@/components/EmptyState';
 
 export const dynamic = 'force-dynamic';
 
-/** Home — porte de `Home.tsx`, agora lendo os cursos do banco via Prisma. */
+/** Home: os cursos vêm do `GET /courses` do Nest (público). */
 export default async function HomePage() {
-  const courses = await coursesService.findAll();
+  const courses = await coursesApi.list();
 
   return (
     <div className="container">

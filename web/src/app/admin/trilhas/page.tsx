@@ -1,10 +1,13 @@
-import { trilhasService } from '@/lib/trilhas/trilhas.service';
+import { trilhasApi } from '@/lib/api';
+import { handlePageError, requireToken } from '@/lib/server-session';
 import { TrilhasManager } from '@/components/admin/TrilhasManager';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminTrilhasPage() {
-  const trilhas = await trilhasService.findAll();
+  // A leitura é pública, mas criar, editar e excluir exigem login.
+  await requireToken();
+  const trilhas = await trilhasApi.list().catch(handlePageError);
 
   return (
     <div>

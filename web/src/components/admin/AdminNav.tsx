@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BookMarked, Database, FileText, GraduationCap, Route, Users } from 'lucide-react';
+import { API_URL } from '@/lib/api-client';
 
 const SECTIONS = [
   { href: '/admin/usuarios', label: 'Usuários', icon: Users },
@@ -38,7 +39,10 @@ export function AdminNav() {
   );
 }
 
-/** Links de apoio (Prisma Studio e documentação da API), separados das seções por uma linha. */
+/**
+ * Links de apoio, separados das seções por uma linha: o Prisma Studio da `api/`
+ * (`npm run db:studio`, porta 5555) e o Swagger do Nest.
+ */
 export function AdminTools({ className = '' }: { className?: string }) {
   return (
     <nav aria-label="Ferramentas" className={`admin-tools ${className}`}>
@@ -50,10 +54,10 @@ export function AdminTools({ className = '' }: { className?: string }) {
           </a>
         </li>
         <li>
-          <Link href="/api">
+          <a href={`${API_URL}/api`} target="_blank" rel="noreferrer">
             <FileText size={16} aria-hidden="true" />
             Documentação da API
-          </Link>
+          </a>
         </li>
       </ul>
     </nav>

@@ -1,14 +1,15 @@
-import { coursesService } from '@/lib/courses/courses.service';
-import { trilhasService } from '@/lib/trilhas/trilhas.service';
+import { coursesApi, trilhasApi } from '@/lib/api';
+import { handlePageError, requireToken } from '@/lib/server-session';
 import { CoursesManager } from '@/components/admin/CoursesManager';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminCursosPage() {
-  const [courses, trilhas] = await Promise.all([
-    coursesService.findAll(),
-    trilhasService.findAll(),
-  ]);
+  // A leitura é pública, mas criar, editar e excluir exigem login.
+  await requireToken();
+  const [courses, trilhas] = await Promise.all([coursesApi.list(), trilhasApi.list()]).catch(
+    handlePageError,
+  );
 
   return (
     <div>

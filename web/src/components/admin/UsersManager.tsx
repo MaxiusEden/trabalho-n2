@@ -3,18 +3,10 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { apiFetch, toMessages } from '@/lib/api-client';
+import { toMessages } from '@/lib/api-client';
+import { usersApi, type User as AdminUser, type UserInput } from '@/lib/api';
 import { formatCount, formatDate } from '@/lib/format';
 import { FormErrors } from './FormErrors';
-
-export type AdminUser = {
-  id: number;
-  email: string;
-  name: string | null;
-  createdAt: Date | string;
-  updateAt: Date | string;
-  _count?: { enrollments: number };
-};
 
 const EMPTY_FORM = { email: '', name: '', password: '' };
 
@@ -49,17 +41,14 @@ export function UsersManager({ users }: { users: AdminUser[] }) {
 
     try {
       if (editingId === null) {
-        await apiFetch('/api/users', { method: 'POST', body: JSON.stringify(form) });
+        await usersApi.create(form);
         setNotice('Usuário criado com sucesso.');
       } else {
         // Senha em branco na edição significa "manter a atual".
-        const payload: Record<string, string> = { email: form.email, name: form.name };
+        const payload: Partial<UserInput> = { email: form.email, name: form.name };
         if (form.password !== '') payload.password = form.password;
 
-        await apiFetch(`/api/users/${editingId}`, {
-          method: 'PATCH',
-          body: JSON.stringify(payload),
-        });
+        await usersApi.update(editingId, payload);
         setNotice('Usuário atualizado com sucesso.');
       }
 
@@ -81,7 +70,7 @@ export function UsersManager({ users }: { users: AdminUser[] }) {
     setNotice(null);
 
     try {
-      await apiFetch(`/api/users/${user.id}`, { method: 'DELETE' });
+      await usersApi.remove(user.id);
       if (editingId === user.id) resetForm();
       setNotice('Usuário excluído com sucesso.');
       router.refresh();
@@ -190,7 +179,7 @@ export function UsersManager({ users }: { users: AdminUser[] }) {
                         <ul className="meta-list">
                           <li>#{user.id}</li>
                           <li>
-                            {formatCount(user._count?.enrollments ?? 0, 'matrícula', 'matrículas')}
+                            {formatCount(user._count.enrollments, 'matrícula', 'matrículas')}
                           </li>
                           <li>Criado em {formatDate(user.createdAt)}</li>
                           <li>Atualizado em {formatDate(user.updateAt)}</li>
