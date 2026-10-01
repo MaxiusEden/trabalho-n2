@@ -1,12 +1,13 @@
 import { coursesApi, trilhasApi } from '@/lib/api';
-import { handlePageError, requireToken } from '@/lib/server-session';
+import { handlePageError, requireAdminToken } from '@/lib/server-session';
+import { AccessDenied } from '@/components/admin/AccessDenied';
 import { CoursesManager } from '@/components/admin/CoursesManager';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminCursosPage() {
-  // A leitura é pública, mas criar, editar e excluir exigem login.
-  await requireToken();
+  // Só ADMIN: a leitura é pública, mas criar, editar e excluir exigem o perfil.
+  if (!(await requireAdminToken())) return <AccessDenied />;
   const [courses, trilhas] = await Promise.all([coursesApi.list(), trilhasApi.list()]).catch(
     handlePageError,
   );

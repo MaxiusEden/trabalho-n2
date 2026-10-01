@@ -11,6 +11,15 @@ export async function requireToken(): Promise<string> {
   return token;
 }
 
+/**
+ * Para as páginas de `/admin`: sem login vai para `/login`; logado sem perfil
+ * ADMIN devolve `null`, e a página mostra o acesso negado sem chamar a API.
+ */
+export async function requireAdminToken(): Promise<string | null> {
+  const token = await requireToken();
+  return decodeToken(token)?.role === 'ADMIN' ? token : null;
+}
+
 /** Traduz o erro da API na resposta da página: 404 vira a página de não encontrado, 401 vai para o login. */
 export function handlePageError(error: unknown): never {
   if (error instanceof ApiError) {

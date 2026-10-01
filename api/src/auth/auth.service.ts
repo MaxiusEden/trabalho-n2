@@ -3,10 +3,13 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
+import { Role } from '../generated/prisma/enums';
 
+// Acréscimo ao PDF: o token leva também o perfil (etapa 8).
 export interface JwtPayload {
   sub: number;
   email: string;
+  role: Role;
 }
 
 @Injectable()
@@ -26,7 +29,11 @@ export class AuthService {
     }
 
     // Define o conteúdo do token
-    const payload: JwtPayload = { sub: user.id, email: user.email };
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
 
     return {
       access_token: this.jwtService.sign(payload), // Gera o JWT assinado

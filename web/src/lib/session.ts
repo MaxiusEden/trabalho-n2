@@ -7,12 +7,17 @@ import {
   readBrowserToken,
   subscribeToken,
   writeBrowserToken,
+  type Role,
 } from './token';
 
-/** Quem está logado, segundo o token: `id` é o `sub` do JWT. */
+/**
+ * Quem está logado, segundo o token: `id` é o `sub` do JWT. O `role` serve só
+ * para a interface (mostrar ou esconder); quem barra de verdade é a API.
+ */
 export type SessionUser = {
   id: number;
   email: string;
+  role: Role;
 };
 
 function getServerSnapshot(): string | null {
@@ -38,7 +43,7 @@ export function useSession(): SessionValue {
 
   const user = useMemo<SessionUser | null>(() => {
     const payload = token ? decodeToken(token) : null;
-    return payload ? { id: payload.sub, email: payload.email } : null;
+    return payload ? { id: payload.sub, email: payload.email, role: payload.role } : null;
   }, [token]);
 
   const signIn = useCallback((accessToken: string) => writeBrowserToken(accessToken), []);

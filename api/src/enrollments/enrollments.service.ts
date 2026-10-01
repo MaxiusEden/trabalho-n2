@@ -1,11 +1,16 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '../generated/prisma/client';
+import { AuthUser, isAdmin } from '../auth/auth-user';
+
+const OUTRO_USUARIO =
+  'Só administradores veem ou cancelam matrículas de outros usuários';
 
 const enrollmentSelect = {
   id: true,
@@ -46,25 +51,43 @@ export class EnrollmentsService {
     }
   }
 
-  findAll(options: { userId?: number; courseId?: number } = {}) {
+  // ADMIN vê todas (com os filtros). USER vê só as próprias: sem `userId` o
+  // filtro vira o dele, e pedir o de outra pessoa dá 403.
+  findAll(
+    requester: AuthUser,
+    options: { userId?: number; courseId?: number } = {},
+  ) {
+    let userId = options.userId;
+    if (!isAdmin(requester)) {
+      if (userId !== undefined && userId !== requester.userId) {
+        throw new ForbiddenException(OUTRO_USUARIO);
+      }
+      userId = requester.userId;
+    }
+
     return this.prisma.enrollment.findMany({
-      where: { userId: options.userId, courseId: options.courseId },
+      where: { userId, courseId: options.courseId },
       select: enrollmentSelect,
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, requester: AuthUser) {
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { id },
       select: enrollmentSelect,
     });
     if (!enrollment)
       throw new NotFoundException(`Matrícula ${id} não encontrada`);
+    if (!isAdmin(requester) && enrollment.userId !== requester.userId) {
+      throw new ForbiddenException(OUTRO_USUARIO);
+    }
     return enrollment;
   }
 
-  remove(id: number) {
+  // O dono cancela a própria matrícula; a de outra pessoa, só o ADMIN.
+  async remove(id: number, requester: AuthUser) {
+    await this.findOne(id, requester);
     return this.prisma.enrollment.delete({
       where: { id },
       select: enrollmentSelect,

@@ -20,12 +20,10 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { EnrollmentsService } from './enrollments.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
+import type { AuthenticatedRequest } from '../auth/auth-user';
 
-// O que a JwtStrategy.validate anexa em req.user.
-type AuthenticatedRequest = { user: { userId: number; email: string } };
-
-// Todas as rotas de matrícula exigem login. Sem perfis de admin, qualquer
-// usuário logado lista e cancela matrículas de outros (limitação conhecida).
+// Todas as rotas de matrícula exigem login. O USER se matricula e vê ou cancela
+// só as próprias; as de outros usuários, só o ADMIN (etapa 8).
 @ApiTags('enrollments')
 @ApiBearerAuth('token')
 @UseGuards(AuthGuard('jwt'))
@@ -54,37 +52,51 @@ export class EnrollmentsController {
 
   @Get()
   @ApiOperation({
-    summary: 'Listar matrículas (opcional: filtrar por usuário e curso)',
+    summary:
+      'Listar matrículas: ADMIN vê todas (filtros opcionais); USER, só as próprias',
   })
   @ApiQuery({ name: 'userId', required: false, type: Number })
   @ApiQuery({ name: 'courseId', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Lista de matrículas.' })
   @ApiResponse({ status: 400, description: 'Filtro não numérico.' })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  @ApiResponse({
+    status: 403,
+    description: 'USER pedindo matrículas de outro usuário.',
+  })
   findAll(
+    @Req() req: AuthenticatedRequest,
     @Query('userId', new ParseIntPipe({ optional: true })) userId?: number,
     @Query('courseId', new ParseIntPipe({ optional: true })) courseId?: number,
   ) {
-    return this.enrollmentsService.findAll({ userId, courseId });
+    return this.enrollmentsService.findAll(req.user, { userId, courseId });
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Buscar uma matrícula pelo ID' })
+  @ApiOperation({ summary: 'Buscar uma matrícula pelo ID (dono ou ADMIN)' })
   @ApiResponse({ status: 200, description: 'Matrícula encontrada.' })
   @ApiResponse({ status: 400, description: 'ID não numérico.' })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  @ApiResponse({ status: 403, description: 'Matrícula de outro usuário.' })
   @ApiResponse({ status: 404, description: 'Matrícula não encontrada.' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.enrollmentsService.findOne(id);
+  findOne(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.enrollmentsService.findOne(id, req.user);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Cancelar uma matrícula' })
+  @ApiOperation({ summary: 'Cancelar uma matrícula (dono ou ADMIN)' })
   @ApiResponse({ status: 200, description: 'Matrícula cancelada.' })
   @ApiResponse({ status: 400, description: 'ID não numérico.' })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  @ApiResponse({ status: 403, description: 'Matrícula de outro usuário.' })
   @ApiResponse({ status: 404, description: 'Matrícula não encontrada.' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.enrollmentsService.remove(id);
+  remove(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.enrollmentsService.remove(id, req.user);
   }
 }

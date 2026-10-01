@@ -20,7 +20,8 @@ grava no PostgreSQL. O login do site é o mesmo `POST /auth/login` do Swagger.
 
 ## Como rodar
 
-Precisa de um PostgreSQL local em `localhost:5432`. São dois terminais.
+Precisa de um PostgreSQL local em `localhost:5432`. A demonstração usa **três
+terminais**, nesta ordem: a API, o frontend e o Prisma Studio.
 
 **1. API** — crie `api/.env` (fora do Git) com a `DATABASE_URL` da seção 2 do PDF
 (`docs/CRUD - NestJS.pdf`), apontando para o banco `DBdev` com o usuário e a senha
@@ -48,6 +49,16 @@ npm install
 npm run dev
 ```
 
+**3. Prisma Studio** (para mostrar os dados gravados no PostgreSQL):
+
+```bash
+cd api
+npm run db:studio
+```
+
+Ele abre em <http://localhost:5555>. O link "Banco de dados" da administração do
+site aponta para lá, mas só funciona com este terminal rodando.
+
 O `web/` chama a API em `http://localhost:3000`. Para outro endereço, defina
 `NEXT_PUBLIC_API_URL` em `web/.env`.
 
@@ -56,16 +67,25 @@ O `web/` chama a API em `http://localhost:3000`. Para outro endereço, defina
 1. **Plataforma funcionando**: em <http://localhost:3001>, "Entrar" → "Criar conta".
    O cadastro chama `POST /users` e já faz o login. Abrir um curso e clicar em
    "Matricular-se".
-2. **Dados salvos na persistência**: `npm run db:studio` dentro de `api/` abre o
-   Prisma Studio com as tabelas do PostgreSQL. O usuário novo aparece em `User`,
+2. **Dados salvos na persistência**: no terceiro terminal, o Prisma Studio
+   (`npm run db:studio` em `api/`) mostra as tabelas do PostgreSQL. O usuário novo aparece em `User`,
    com a senha em hash bcrypt (`$2b$10$...`), e a matrícula aparece em `Enrollment`.
-   O mesmo aparece no site em Administração → Matrículas.
+   Entrando com a conta admin, o mesmo aparece no site em Administração → Matrículas.
 3. **Token no Swagger**: em <http://localhost:3000/api>, `GET /users` sem token dá
    401. `POST /auth/login` com o usuário criado no passo 1 devolve o
    `access_token`; colar em "Authorize" e repetir o `GET /users`: 200.
 
-Usuários do seed: `aluno@perero.com` e `joao@email.com`, senha `senha123` (dados de
-demonstração; usuário que já existe não é alterado pelo seed).
+Contas do seed (senha `senha123`, dados de demonstração; usuário que já existe não
+é alterado pelo seed):
+
+| E-mail             | Perfil  |
+| ------------------ | ------- |
+| `admin@perero.com` | `ADMIN` |
+| `aluno@perero.com` | `USER`  |
+| `joao@email.com`   | `USER`  |
+
+Todo cadastro novo nasce `USER`. Uma conta só vira `ADMIN` pelo seed ou pelo Prisma
+Studio: nenhuma rota aceita `role` no corpo.
 
 ## api/ — NestJS
 
@@ -75,22 +95,27 @@ Nest 12 é ESM e quebra o `moduleFormat = "cjs"` do Prisma que o PDF pede. Os
 geradores rodam com o CLI local: `npx nest generate ...` dentro de `api/`. Sem
 `JWT_SECRET` a API não sobe, de propósito (PDF "JWT - Autenticação").
 
-| Rota                                          | Acesso                                    |
-| --------------------------------------------- | ----------------------------------------- |
-| `POST /auth/login`                            | público; devolve o token                  |
-| `POST /users`                                 | público (cadastro)                        |
-| `GET`, `PATCH`, `DELETE /users[/:id]`         | com token                                 |
-| `GET /trilhas[/:id]`, `GET /courses[/:id]`    | público (catálogo)                        |
-| `POST`, `PATCH`, `DELETE` de trilhas e cursos | com token                                 |
-| `/enrollments` (todas)                        | com token; a matrícula é do dono do token |
+| Rota                                          | Acesso                                               |
+| --------------------------------------------- | ---------------------------------------------------- |
+| `POST /auth/login`                            | público; devolve o token (com `sub`, `email`, `role`) |
+| `POST /users`                                 | público (cadastro); não aceita `role`                |
+| `GET /users[/:id]`                            | qualquer usuário logado (como no PDF)                |
+| `PATCH`, `DELETE /users/:id`                  | a própria conta, ou ADMIN                            |
+| `GET /trilhas[/:id]`, `GET /courses[/:id]`    | público (catálogo)                                   |
+| `POST`, `PATCH`, `DELETE` de trilhas e cursos | só ADMIN                                             |
+| `POST /enrollments`                           | qualquer usuário logado; a matrícula é do dono do token |
+| `GET /enrollments[/:id]`, `DELETE /enrollments/:id` | USER: só as próprias; ADMIN: todas             |
 
 - A senha é gravada com bcrypt e nunca sai nas respostas.
 - Erros: dados inválidos ou campo extra no corpo → 400; id não numérico → 400;
   registro inexistente → 404; e-mail repetido ou matrícula duplicada → 409;
   referência a trilha ou curso inexistente → 400.
+- Sem login → 401; logado sem permissão → 403. O perfil vem do token: trocar o
+  perfil de uma conta só vale depois de um novo login (até 1h).
 - CORS liberado só para o frontend (`http://localhost:3001`).
-- Limitação conhecida: não há perfis. Qualquer usuário logado edita o catálogo e
-  lista ou cancela matrículas de outros.
+- Limitação conhecida: a listagem e a busca de usuários (`GET /users`,
+  `GET /users/:id`) ficam abertas a qualquer usuário logado, porque é o que o
+  roteiro "Como Testar" do PDF "JWT - Autenticação" usa.
 
 Scripts (dentro de `api/`): `npm run start:dev`, `npm run build`,
 `npm run typecheck`, `npm run lint`, `npm test`, `npm run db:seed`,
@@ -105,7 +130,9 @@ Todo HTTP passa por [`web/src/lib/api-client.ts`](web/src/lib/api-client.ts), o 
   do token (1h). O navegador o envia como `Authorization: Bearer` nas chamadas ao
   Nest, e as páginas do servidor fazem o mesmo com o token lido do cookie. Sair
   apaga o token. Um 401 da API manda para `/login`.
-- **Administração**: as páginas de `/admin` exigem login.
+- **Administração**: só para ADMIN. O link aparece só para essa conta; um USER que
+  abrir `/admin` direto vê "Acesso negado" (e a API recusa com 403). Sem login,
+  `/admin` manda para `/login`.
 
 | Rota                  | O que é                                                   |
 | --------------------- | --------------------------------------------------------- |

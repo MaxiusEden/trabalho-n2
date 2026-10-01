@@ -2,6 +2,8 @@ import 'dotenv/config';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
+import { AuthUser } from './auth-user';
+import { JwtPayload } from './auth.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -18,7 +20,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   // Se o token for válido, o NestJS anexa este retorno ao objeto da requisição (req.user)
-  validate({ sub, email }: { sub: number; email: string }) {
-    return { userId: sub, email };
+  validate({ sub, email, role }: JwtPayload): AuthUser {
+    return { userId: sub, email, role };
   }
 }

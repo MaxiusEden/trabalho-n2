@@ -26,7 +26,7 @@ describe('EnrollmentsController', () => {
     // Mesmo que alguém force um userId no corpo, o controller só lê courseId.
     const body = { courseId: 3, userId: 999 } as { courseId: number };
     await controller.create(
-      { user: { userId: 42, email: 'aluno@perero.com' } },
+      { user: { userId: 42, email: 'aluno@perero.com', role: 'USER' } },
       body,
     );
 

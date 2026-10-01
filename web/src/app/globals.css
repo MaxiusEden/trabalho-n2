@@ -436,6 +436,20 @@ pre {
   border-top: 1px solid var(--color-border);
 }
 
+/* Dica sob o link do Prisma Studio: ele só abre se `npm run db:studio` estiver rodando. */
+.admin-tools__hint {
+  margin: 0 0 0.25rem;
+  padding-inline: 0.625rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.admin-tools__hint code {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: inherit;
+  color: inherit;
+}
+
 @media (min-width: 992px) {
   .admin-nav__list {
     flex-direction: column;
@@ -444,6 +458,10 @@ pre {
 
   .admin-nav__list a {
     padding: 0.5rem 0.75rem;
+  }
+
+  .admin-tools__hint {
+    padding-inline: 0.75rem;
   }
 }
 

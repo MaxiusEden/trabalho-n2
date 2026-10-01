@@ -8,6 +8,8 @@ import {
   Delete,
   UseGuards,
   ParseIntPipe,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -19,6 +21,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { isAdmin } from '../auth/auth-user';
+import type { AuthenticatedRequest, AuthUser } from '../auth/auth-user';
 
 @ApiTags('users')
 @Controller('users')
@@ -68,12 +72,15 @@ export class UsersController {
     description: 'Dados inválidos ou ID não numérico.',
   })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  @ApiResponse({ status: 403, description: 'Conta de outro usuário.' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
   @ApiResponse({ status: 409, description: 'E-mail já cadastrado.' })
   update(
+    @Req() req: AuthenticatedRequest,
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
   ) {
+    assertSelfOrAdmin(req.user, id);
     return this.usersService.update(id, updateUserDto);
   }
 
@@ -84,8 +91,23 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Usuário removido.' })
   @ApiResponse({ status: 400, description: 'ID não numérico.' })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  @ApiResponse({ status: 403, description: 'Conta de outro usuário.' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    assertSelfOrAdmin(req.user, id);
     return this.usersService.remove(id);
+  }
+}
+
+// Acréscimo ao PDF (etapa 8): editar ou excluir só a própria conta, a não ser
+// que seja ADMIN. Listar e buscar continuam abertos a qualquer usuário logado.
+function assertSelfOrAdmin(user: AuthUser, id: number) {
+  if (!isAdmin(user) && user.userId !== id) {
+    throw new ForbiddenException(
+      'Só administradores alteram ou excluem a conta de outro usuário',
+    );
   }
 }

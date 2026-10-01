@@ -8,8 +8,15 @@ datasource db {
   provider = "postgresql"
 }
 
-/// Usuário: o model do PDF "CRUD - NestJS". A única adição é a relação
-/// `enrollments`, que não cria coluna.
+/// Perfil de acesso. Todo cadastro nasce USER; ADMIN só pelo seed ou pelo
+/// Prisma Studio (nenhuma rota aceita `role` no corpo).
+enum Role {
+  USER
+  ADMIN
+}
+
+/// Usuário: o model do PDF "CRUD - NestJS". Acréscimos: a relação
+/// `enrollments`, que não cria coluna, e o `role` (etapa 8).
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -17,6 +24,7 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updateAt  DateTime @updatedAt()
+  role      Role     @default(USER)
 
   enrollments Enrollment[]
 }

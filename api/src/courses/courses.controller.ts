@@ -18,6 +18,9 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { Role } from '../generated/prisma/enums';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
@@ -27,9 +30,10 @@ import { UpdateCourseDto } from './dto/update-course.dto';
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
-  // Escrita: exige login (qualquer usuário logado; não há perfis de admin).
+  // Escrita: só ADMIN (etapa 8). O perfil vem do token.
   @ApiBearerAuth('token')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.ADMIN)
   @Post()
   @ApiOperation({ summary: 'Criar um curso com o conteúdo programático' })
   @ApiResponse({ status: 201, description: 'Curso criado.' })
@@ -38,6 +42,7 @@ export class CoursesController {
     description: 'Dados inválidos ou trilha inexistente.',
   })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  @ApiResponse({ status: 403, description: 'Só administradores.' })
   create(@Body() createCourseDto: CreateCourseDto) {
     return this.coursesService.create(createCourseDto);
   }
@@ -64,7 +69,8 @@ export class CoursesController {
   }
 
   @ApiBearerAuth('token')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.ADMIN)
   @Patch(':id')
   @ApiOperation({
     summary: 'Atualizar um curso (lessons, se enviado, substitui as aulas)',
@@ -75,6 +81,7 @@ export class CoursesController {
     description: 'Dados inválidos, ID não numérico ou trilha inexistente.',
   })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  @ApiResponse({ status: 403, description: 'Só administradores.' })
   @ApiResponse({ status: 404, description: 'Curso não encontrado.' })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -84,12 +91,14 @@ export class CoursesController {
   }
 
   @ApiBearerAuth('token')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   @ApiOperation({ summary: 'Remover um curso (com as aulas e matrículas)' })
   @ApiResponse({ status: 200, description: 'Curso removido.' })
   @ApiResponse({ status: 400, description: 'ID não numérico.' })
   @ApiResponse({ status: 401, description: 'Token ausente ou inválido.' })
+  @ApiResponse({ status: 403, description: 'Só administradores.' })
   @ApiResponse({ status: 404, description: 'Curso não encontrado.' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.coursesService.remove(id);

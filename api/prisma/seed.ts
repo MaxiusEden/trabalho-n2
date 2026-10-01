@@ -2,11 +2,12 @@ import 'dotenv/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
+import { Role } from '../src/generated/prisma/enums';
 
 /**
  * Popula o banco com o catálogo do trabalho-n2 (as trilhas de `Trilhas.tsx`, os
  * cursos de `Home.tsx` e o conteúdo programático de `CourseDetails.tsx`) e com
- * dois usuários de demonstração. Portado de `web/prisma/seed.ts`.
+ * três usuários de demonstração (um ADMIN). Portado de `web/prisma/seed.ts`.
  *
  * Usuários: upsert por e-mail com `update: {}`. Quem já existe não é alterado
  * (nem nome, nem senha); quem não existe é criado com a senha em bcrypt.
@@ -52,7 +53,15 @@ const CURSOS = [
   },
 ];
 
+// Contas de demonstração. Só o admin@perero.com é ADMIN; as outras ficam com o
+// padrão do schema (USER).
 const USUARIOS = [
+  {
+    email: 'admin@perero.com',
+    name: 'Admin Demo',
+    password: 'senha123',
+    role: Role.ADMIN,
+  },
   { email: 'aluno@perero.com', name: 'Aluno Demo', password: 'senha123' },
   { email: 'joao@email.com', name: 'João Silva', password: 'senha123' },
 ];

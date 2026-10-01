@@ -9,8 +9,10 @@
  */
 export const TOKEN_COOKIE = 'perero_token';
 
+export type Role = 'USER' | 'ADMIN';
+
 /** O que o `AuthService.login` do Nest põe no token, mais o `exp` do `expiresIn: '1h'`. */
-export type TokenPayload = { sub: number; email: string; exp: number };
+export type TokenPayload = { sub: number; email: string; role: Role; exp: number };
 
 /** Lê o payload sem conferir a assinatura (isso é papel do Nest). Token vencido vira `null`. */
 export function decodeToken(token: string): TokenPayload | null {

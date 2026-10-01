@@ -4,6 +4,7 @@
  * no navegador o token vem do cookie.
  */
 import { apiFetch } from './api-client';
+import type { Role } from './token';
 
 type Token = string | null | undefined;
 
@@ -50,6 +51,7 @@ export type User = {
   name: string | null;
   createdAt: string;
   updateAt: string;
+  role: Role;
   _count: { enrollments: number };
 };
 

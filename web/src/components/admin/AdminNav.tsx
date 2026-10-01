@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useId } from 'react';
 import { BookMarked, Database, FileText, GraduationCap, Route, Users } from 'lucide-react';
 import { API_URL } from '@/lib/api-client';
 
@@ -44,14 +45,25 @@ export function AdminNav() {
  * (`npm run db:studio`, porta 5555) e o Swagger do Nest.
  */
 export function AdminTools({ className = '' }: { className?: string }) {
+  // O componente aparece duas vezes (lateral e pé da página); o id da dica não pode repetir.
+  const studioHintId = useId();
+
   return (
     <nav aria-label="Ferramentas" className={`admin-tools ${className}`}>
       <ul className="admin-nav__list">
         <li>
-          <a href="http://localhost:5555" target="_blank" rel="noreferrer">
+          <a
+            href="http://localhost:5555"
+            target="_blank"
+            rel="noreferrer"
+            aria-describedby={studioHintId}
+          >
             <Database size={16} aria-hidden="true" />
             Banco de dados
           </a>
+          <p id={studioHintId} className="admin-tools__hint">
+            Antes, rode <code>npm run db:studio</code> em <code>api/</code>.
+          </p>
         </li>
         <li>
           <a href={`${API_URL}/api`} target="_blank" rel="noreferrer">

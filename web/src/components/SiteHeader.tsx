@@ -6,11 +6,19 @@ import { useState } from 'react';
 import { BookOpen, Menu, X } from 'lucide-react';
 import { useSession } from '@/lib/session';
 
-const NAV = [
-  { href: '/', label: 'Cursos', match: (path: string) => path === '/' || path.startsWith('/curso/') },
-  { href: '/trilhas', label: 'Trilhas', match: (path: string) => path.startsWith('/trilhas') },
-  { href: '/admin/usuarios', label: 'Administração', match: (path: string) => path.startsWith('/admin') },
-] as const;
+type NavItem = { href: string; label: string; match: (path: string) => boolean };
+
+const NAV: NavItem[] = [
+  { href: '/', label: 'Cursos', match: (path) => path === '/' || path.startsWith('/curso/') },
+  { href: '/trilhas', label: 'Trilhas', match: (path) => path.startsWith('/trilhas') },
+];
+
+/** Só aparece para ADMIN. Esconder o link é conveniência: quem barra é a API (403). */
+const ADMIN_NAV: NavItem = {
+  href: '/admin/usuarios',
+  label: 'Administração',
+  match: (path) => path.startsWith('/admin'),
+};
 
 /** Barra única de navegação. Abaixo de `md` os links vão para um menu recolhível. */
 export function SiteHeader() {
@@ -26,9 +34,11 @@ export function SiteHeader() {
     router.refresh();
   }
 
+  const items = user?.role === 'ADMIN' ? [...NAV, ADMIN_NAV] : NAV;
+
   const links = (
     <ul className="site-nav">
-      {NAV.map((item) => (
+      {items.map((item) => (
         <li key={item.href}>
           <Link
             href={item.href}
