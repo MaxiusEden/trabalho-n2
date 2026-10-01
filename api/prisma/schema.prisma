@@ -15,8 +15,15 @@ enum Role {
   ADMIN
 }
 
-/// Usuário: o model do PDF "CRUD - NestJS". Acréscimos: a relação
-/// `enrollments`, que não cria coluna, e o `role` (etapa 8).
+/// Nível do curso (LAB03, Cursos.Nivel).
+enum CourseLevel {
+  INICIANTE
+  INTERMEDIARIO
+  AVANCADO
+}
+
+/// Usuário: o model do PDF "CRUD - NestJS". Acréscimos: as relações
+/// `enrollments` e `coursesTaught`, que não criam coluna, e o `role` (etapa 8).
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -26,7 +33,21 @@ model User {
   updateAt  DateTime @updatedAt()
   role      Role     @default(USER)
 
-  enrollments Enrollment[]
+  enrollments   Enrollment[]
+  coursesTaught Course[]     @relation("CourseInstructor")
+}
+
+/// Categoria de cursos e trilhas (LAB03, Categorias). Apagar a categoria só
+/// deixa os cursos e as trilhas dela sem categoria.
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses Course[]
+  trilhas Trilha[]
 }
 
 /// Trilha de aprendizado. O número de módulos vem de `_count.courses`, nunca
@@ -35,28 +56,42 @@ model Trilha {
   id          Int      @id @default(autoincrement())
   title       String
   description String
+  categoryId  Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  courses Course[]
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  courses  Course[]
+
+  @@index([categoryId])
 }
 
 /// Curso. Preço em centavos, para não ter erro de arredondamento.
+/// `instructorId` e `categoryId` são opcionais: os cursos que já existiam não
+/// tinham instrutor nem categoria.
 model Course {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  image       String
-  priceCents  Int
-  trilhaId    Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           Int         @id @default(autoincrement())
+  title        String
+  description  String
+  image        String
+  priceCents   Int
+  trilhaId     Int?
+  instructorId Int?
+  categoryId   Int?
+  level        CourseLevel @default(INICIANTE)
+  publishedAt  DateTime    @default(now())
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   trilha      Trilha?      @relation(fields: [trilhaId], references: [id], onDelete: SetNull)
+  instructor  User?        @relation("CourseInstructor", fields: [instructorId], references: [id], onDelete: SetNull)
+  category    Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   lessons     Lesson[]
   enrollments Enrollment[]
 
   @@index([trilhaId])
+  @@index([instructorId])
+  @@index([categoryId])
 }
 
 /// Aula do conteúdo programático de um curso.

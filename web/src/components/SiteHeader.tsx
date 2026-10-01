@@ -10,6 +10,7 @@ type NavItem = { href: string; label: string; match: (path: string) => boolean }
 
 const NAV: NavItem[] = [
   { href: '/', label: 'Cursos', match: (path) => path === '/' || path.startsWith('/curso/') },
+  { href: '/categorias', label: 'Categorias', match: (path) => path.startsWith('/categorias') },
   { href: '/trilhas', label: 'Trilhas', match: (path) => path.startsWith('/trilhas') },
 ];
 

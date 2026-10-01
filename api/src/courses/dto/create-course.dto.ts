@@ -1,8 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { CourseLevel } from '../../generated/prisma/enums';
 import {
   ArrayMaxSize,
   IsArray,
+  IsDateString,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -91,6 +94,54 @@ export class CreateCourseDto {
   @IsInt({ message: 'trilhaId deve ser um número inteiro' })
   @Min(1, { message: 'trilhaId deve ser um id válido' })
   trilhaId?: number | null;
+
+  @ApiProperty({
+    example: 1,
+    description: 'ID da categoria; null ou omitido deixa o curso sem categoria',
+    required: false,
+    nullable: true,
+    type: Number,
+  })
+  @IsOptional()
+  @IsInt({ message: 'categoryId deve ser um número inteiro' })
+  @Min(1, { message: 'categoryId deve ser um id válido' })
+  categoryId?: number | null;
+
+  @ApiProperty({
+    example: 2,
+    description: 'ID do usuário instrutor; null ou omitido deixa sem instrutor',
+    required: false,
+    nullable: true,
+    type: Number,
+  })
+  @IsOptional()
+  @IsInt({ message: 'instructorId deve ser um número inteiro' })
+  @Min(1, { message: 'instructorId deve ser um id válido' })
+  instructorId?: number | null;
+
+  @ApiProperty({
+    enum: CourseLevel,
+    example: CourseLevel.INICIANTE,
+    description: 'Nível do curso (padrão INICIANTE)',
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(CourseLevel, {
+    message: 'level deve ser INICIANTE, INTERMEDIARIO ou AVANCADO',
+  })
+  level?: CourseLevel;
+
+  @ApiProperty({
+    example: '2026-09-30T12:00:00.000Z',
+    description: 'Data de publicação (ISO 8601; padrão: agora)',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString(
+    {},
+    { message: 'publishedAt deve ser uma data ISO 8601 válida' },
+  )
+  publishedAt?: string;
 
   @ApiProperty({
     description: 'Conteúdo programático; a ordem das aulas é a do array',

@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { TrilhasModule } from './trilhas/trilhas.module';
 import { CoursesModule } from './courses/courses.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { EnrollmentsModule } from './enrollments/enrollments.module';
     TrilhasModule,
     CoursesModule,
     EnrollmentsModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -16,6 +16,24 @@ export function formatDate(value: Date | string): string {
   return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
+/** Só a data, sem hora (ex.: data de publicação do curso). */
+export function formatDay(value: Date | string): string {
+  const date = value instanceof Date ? value : new Date(value);
+  return date.toLocaleDateString('pt-BR', { dateStyle: 'short' });
+}
+
+const LEVEL_LABELS = {
+  INICIANTE: 'Iniciante',
+  INTERMEDIARIO: 'Intermediário',
+  AVANCADO: 'Avançado',
+} as const;
+
+export const COURSE_LEVELS = Object.keys(LEVEL_LABELS) as (keyof typeof LEVEL_LABELS)[];
+
+export function formatLevel(level: keyof typeof LEVEL_LABELS): string {
+  return LEVEL_LABELS[level];
+}
+
 export function formatDuration(minutes: number): string {
   return `${minutes} min`;
 }

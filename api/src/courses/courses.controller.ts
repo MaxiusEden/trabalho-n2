@@ -49,14 +49,19 @@ export class CoursesController {
 
   // Leitura do catálogo: pública.
   @Get()
-  @ApiOperation({ summary: 'Listar os cursos (opcional: filtrar por trilha)' })
+  @ApiOperation({
+    summary: 'Listar os cursos (opcional: filtrar por trilha e por categoria)',
+  })
   @ApiQuery({ name: 'trilhaId', required: false, type: Number })
+  @ApiQuery({ name: 'categoryId', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Lista de cursos.' })
-  @ApiResponse({ status: 400, description: 'trilhaId não numérico.' })
+  @ApiResponse({ status: 400, description: 'Filtro não numérico.' })
   findAll(
     @Query('trilhaId', new ParseIntPipe({ optional: true })) trilhaId?: number,
+    @Query('categoryId', new ParseIntPipe({ optional: true }))
+    categoryId?: number,
   ) {
-    return this.coursesService.findAll({ trilhaId });
+    return this.coursesService.findAll({ trilhaId, categoryId });
   }
 
   @Get(':id')

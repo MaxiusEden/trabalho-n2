@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useId } from 'react';
-import { BookMarked, Database, FileText, GraduationCap, Route, Users } from 'lucide-react';
+import { BookMarked, Database, FileText, GraduationCap, Route, Tags, Users } from 'lucide-react';
 import { API_URL } from '@/lib/api-client';
 
 const SECTIONS = [
   { href: '/admin/usuarios', label: 'Usuários', icon: Users },
   { href: '/admin/cursos', label: 'Cursos', icon: BookMarked },
+  { href: '/admin/categorias', label: 'Categorias', icon: Tags },
   { href: '/admin/trilhas', label: 'Trilhas', icon: Route },
   { href: '/admin/matriculas', label: 'Matrículas', icon: GraduationCap },
 ] as const;

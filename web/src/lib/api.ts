@@ -8,12 +8,37 @@ import type { Role } from './token';
 
 type Token = string | null | undefined;
 
+export type CourseLevel = 'INICIANTE' | 'INTERMEDIARIO' | 'AVANCADO';
+
+export type Category = {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  _count: { courses: number; trilhas: number };
+};
+
+export type CategoryDetail = Category & {
+  courses: {
+    id: number;
+    title: string;
+    description: string;
+    image: string;
+    priceCents: number;
+    level: CourseLevel;
+  }[];
+  trilhas: { id: number; title: string; description: string; _count: { courses: number } }[];
+};
+
 export type Trilha = {
   id: number;
   title: string;
   description: string;
+  categoryId: number | null;
   createdAt: string;
   updatedAt: string;
+  category: { id: number; name: string } | null;
   _count: { courses: number };
 };
 
@@ -37,9 +62,15 @@ export type Course = {
   image: string;
   priceCents: number;
   trilhaId: number | null;
+  categoryId: number | null;
+  instructorId: number | null;
+  level: CourseLevel;
+  publishedAt: string;
   createdAt: string;
   updatedAt: string;
   trilha: { id: number; title: string } | null;
+  category: { id: number; name: string } | null;
+  instructor: { id: number; name: string | null; email: string } | null;
   lessons: Lesson[];
   _count: { enrollments: number };
 };
@@ -64,7 +95,9 @@ export type Enrollment = {
   course: { id: number; title: string; priceCents: number };
 };
 
-export type TrilhaInput = { title: string; description: string };
+export type CategoryInput = { name: string; description: string };
+
+export type TrilhaInput = { title: string; description: string; categoryId: number | null };
 
 export type CourseInput = {
   title: string;
@@ -72,6 +105,11 @@ export type CourseInput = {
   image: string;
   priceCents: number;
   trilhaId: number | null;
+  categoryId: number | null;
+  instructorId: number | null;
+  level: CourseLevel;
+  /** ISO 8601. Omitido na criação, a API usa a data de agora. */
+  publishedAt?: string;
   lessons: { title: string; duration: number }[];
 };
 
@@ -93,6 +131,16 @@ export const usersApi = {
   update: (id: number, input: Partial<UserInput>) =>
     apiFetch<User>(`/users/${id}`, { method: 'PATCH', json: input }),
   remove: (id: number) => apiFetch<User>(`/users/${id}`, { method: 'DELETE' }),
+};
+
+export const categoriesApi = {
+  list: () => apiFetch<Category[]>('/categories'),
+  get: (id: number) => apiFetch<CategoryDetail>(`/categories/${id}`),
+  create: (input: CategoryInput) =>
+    apiFetch<Category>('/categories', { method: 'POST', json: input }),
+  update: (id: number, input: CategoryInput) =>
+    apiFetch<Category>(`/categories/${id}`, { method: 'PATCH', json: input }),
+  remove: (id: number) => apiFetch<Category>(`/categories/${id}`, { method: 'DELETE' }),
 };
 
 export const trilhasApi = {

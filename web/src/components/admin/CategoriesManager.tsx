@@ -4,21 +4,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toMessages } from '@/lib/api-client';
-import { trilhasApi, type Trilha as AdminTrilha } from '@/lib/api';
+import { categoriesApi, type Category } from '@/lib/api';
 import { formatCount } from '@/lib/format';
 import { FormErrors } from './FormErrors';
 
-const EMPTY_FORM = { title: '', description: '', categoryId: '' };
+const EMPTY_FORM = { name: '', description: '' };
 
-export type CategoryOption = { id: number; name: string };
-
-export function TrilhasManager({
-  trilhas,
-  categories,
-}: {
-  trilhas: AdminTrilha[];
-  categories: CategoryOption[];
-}) {
+/** CRUD de categorias (LAB03, Categorias). Só ADMIN; a API também barra (403). */
+export function CategoriesManager({ categories }: { categories: Category[] }) {
   const router = useRouter();
 
   const [form, setForm] = useState(EMPTY_FORM);
@@ -33,13 +26,9 @@ export function TrilhasManager({
     setErrors([]);
   }
 
-  function startEdit(trilha: AdminTrilha) {
-    setEditingId(trilha.id);
-    setForm({
-      title: trilha.title,
-      description: trilha.description,
-      categoryId: trilha.categoryId === null ? '' : String(trilha.categoryId),
-    });
+  function startEdit(category: Category) {
+    setEditingId(category.id);
+    setForm({ name: category.name, description: category.description });
     setErrors([]);
     setNotice(null);
   }
@@ -50,19 +39,13 @@ export function TrilhasManager({
     setErrors([]);
     setNotice(null);
 
-    const input = {
-      title: form.title,
-      description: form.description,
-      categoryId: form.categoryId === '' ? null : Number(form.categoryId),
-    };
-
     try {
       if (editingId === null) {
-        await trilhasApi.create(input);
-        setNotice('Trilha criada com sucesso.');
+        await categoriesApi.create(form);
+        setNotice('Categoria criada com sucesso.');
       } else {
-        await trilhasApi.update(editingId, input);
-        setNotice('Trilha atualizada com sucesso.');
+        await categoriesApi.update(editingId, form);
+        setNotice('Categoria atualizada com sucesso.');
       }
 
       resetForm();
@@ -74,24 +57,23 @@ export function TrilhasManager({
     }
   }
 
-  async function handleDelete(trilha: AdminTrilha) {
+  async function handleDelete(category: Category) {
+    const { courses, trilhas } = category._count;
     const aviso =
-      trilha._count.courses > 0
-        ? trilha._count.courses === 1
-          ? ' O curso dela ficará sem trilha (não será excluído).'
-          : ` Os ${trilha._count.courses} cursos dela ficarão sem trilha (não serão excluídos).`
+      courses + trilhas > 0
+        ? ` ${formatCount(courses, 'curso', 'cursos')} e ${formatCount(trilhas, 'trilha', 'trilhas')} ficarão sem categoria (não serão excluídos).`
         : '';
 
-    if (!window.confirm(`Excluir a trilha "${trilha.title}"?${aviso}`)) return;
+    if (!window.confirm(`Excluir a categoria "${category.name}"?${aviso}`)) return;
 
     setBusy(true);
     setErrors([]);
     setNotice(null);
 
     try {
-      await trilhasApi.remove(trilha.id);
-      if (editingId === trilha.id) resetForm();
-      setNotice('Trilha excluída com sucesso.');
+      await categoriesApi.remove(category.id);
+      if (editingId === category.id) resetForm();
+      setNotice('Categoria excluída com sucesso.');
       router.refresh();
     } catch (caught) {
       setErrors(toMessages(caught));
@@ -106,57 +88,39 @@ export function TrilhasManager({
         <div className="card">
           <div className="card-body">
             <h2 className="h5 card-title mb-3">
-              {editingId === null ? 'Nova trilha' : `Editando trilha #${editingId}`}
+              {editingId === null ? 'Nova categoria' : `Editando categoria #${editingId}`}
             </h2>
 
             <FormErrors messages={errors} />
 
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label className="form-label" htmlFor="trilha-title">
-                  Título
+                <label className="form-label" htmlFor="category-name">
+                  Nome
                 </label>
                 <input
-                  id="trilha-title"
+                  id="category-name"
                   type="text"
                   className="form-control"
-                  value={form.title}
-                  onChange={(event) => setForm({ ...form, title: event.target.value })}
-                  placeholder="Trilha Frontend"
+                  value={form.name}
+                  onChange={(event) => setForm({ ...form, name: event.target.value })}
+                  placeholder="Desenvolvimento Web"
                 />
+                <div className="form-text">Não pode repetir o nome de outra categoria.</div>
               </div>
 
               <div className="mb-3">
-                <label className="form-label" htmlFor="trilha-description">
+                <label className="form-label" htmlFor="category-description">
                   Descrição
                 </label>
                 <textarea
-                  id="trilha-description"
+                  id="category-description"
                   className="form-control"
                   rows={3}
                   value={form.description}
                   onChange={(event) => setForm({ ...form, description: event.target.value })}
-                  placeholder="HTML, CSS, JS, React e muito mais."
+                  placeholder="Frontend, backend e tudo o que roda no navegador."
                 />
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label" htmlFor="trilha-category">
-                  Categoria
-                </label>
-                <select
-                  id="trilha-category"
-                  className="form-select"
-                  value={form.categoryId}
-                  onChange={(event) => setForm({ ...form, categoryId: event.target.value })}
-                >
-                  <option value="">Sem categoria</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               <div className="d-flex gap-2">
@@ -182,46 +146,46 @@ export function TrilhasManager({
             <table className="table table-hover table-stack align-middle mb-0">
               <thead>
                 <tr>
-                  <th>Trilha</th>
+                  <th>Categoria</th>
                   <th className="text-end">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {trilhas.length === 0 ? (
+                {categories.length === 0 ? (
                   <tr>
                     <td colSpan={2} className="text-center text-muted py-4">
-                      Nenhuma trilha cadastrada.
+                      Nenhuma categoria cadastrada.
                     </td>
                   </tr>
                 ) : (
-                  trilhas.map((trilha) => (
-                    <tr key={trilha.id}>
+                  categories.map((category) => (
+                    <tr key={category.id}>
                       <td>
-                        {trilha.title}
-                        <div className="small text-muted">{trilha.description}</div>
+                        {category.name}
+                        <div className="small text-muted">{category.description}</div>
                         <ul className="meta-list">
-                          <li>#{trilha.id}</li>
-                          <li>{trilha.category ? trilha.category.name : 'Sem categoria'}</li>
-                          <li>{formatCount(trilha._count.courses, 'curso', 'cursos')}</li>
+                          <li>#{category.id}</li>
+                          <li>{formatCount(category._count.courses, 'curso', 'cursos')}</li>
+                          <li>{formatCount(category._count.trilhas, 'trilha', 'trilhas')}</li>
                         </ul>
                       </td>
                       <td className="text-end text-nowrap">
                         <Link
-                          href={`/trilhas/${trilha.id}`}
+                          href={`/categorias/${category.id}`}
                           className="btn btn-sm btn-outline-secondary me-2"
                         >
                           Ver
                         </Link>
                         <button
                           className="btn btn-sm btn-outline-primary me-2"
-                          onClick={() => startEdit(trilha)}
+                          onClick={() => startEdit(category)}
                           disabled={busy}
                         >
                           Editar
                         </button>
                         <button
                           className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleDelete(trilha)}
+                          onClick={() => handleDelete(category)}
                           disabled={busy}
                         >
                           Excluir

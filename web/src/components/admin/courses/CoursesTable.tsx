@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Course } from '@/lib/api';
-import { formatCount, formatPrice } from '@/lib/format';
+import { formatCount, formatLevel, formatPrice } from '@/lib/format';
 
 /** Tabela de cursos do admin. Abaixo de 576px cada linha empilha (`table-stack`). */
 export function CoursesTable({
@@ -40,6 +40,8 @@ export function CoursesTable({
                     <ul className="meta-list">
                       <li>#{course.id}</li>
                       <li>{course.trilha ? course.trilha.title : 'Sem trilha'}</li>
+                      <li>{course.category ? course.category.name : 'Sem categoria'}</li>
+                      <li>{formatLevel(course.level)}</li>
                       <li>{formatCount(course.lessons.length, 'aula', 'aulas')}</li>
                       <li>{formatCount(course._count.enrollments, 'matrícula', 'matrículas')}</li>
                       <li className="d-sm-none">{formatPrice(course.priceCents)}</li>

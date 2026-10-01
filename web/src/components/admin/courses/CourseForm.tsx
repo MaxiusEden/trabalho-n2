@@ -7,6 +7,7 @@ import { parsePriceToCents } from '@/lib/format';
 import { FormErrors } from '../FormErrors';
 import { LessonsFields } from './LessonsFields';
 import { newLessonKey, type LessonField } from './lesson-field';
+import { CourseMetaFields, type CourseMeta, type Option } from './CourseMetaFields';
 
 export type TrilhaOption = { id: number; title: string };
 
@@ -19,6 +20,24 @@ function initialForm(course: Course | null) {
     trilhaId: course?.trilhaId == null ? '' : String(course.trilhaId),
   };
 }
+
+/** ISO → `YYYY-MM-DD` no fuso local (o que o `<input type="date">` mostra). */
+function toDateInput(iso: string): string {
+  const date = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function initialMeta(course: Course | null): CourseMeta {
+  return {
+    categoryId: course?.categoryId == null ? '' : String(course.categoryId),
+    level: course?.level ?? 'INICIANTE',
+    instructorId: course?.instructorId == null ? '' : String(course.instructorId),
+    publishedAt: course ? toDateInput(course.publishedAt) : '',
+  };
+}
+
+const toId = (value: string) => (value === '' ? null : Number(value));
 
 function initialLessons(course: Course | null): LessonField[] {
   return (course?.lessons ?? []).map((lesson) => ({
@@ -35,15 +54,20 @@ function initialLessons(course: Course | null): LessonField[] {
 export function CourseForm({
   course,
   trilhas,
+  categories,
+  instructors,
   onSave,
   onCancel,
 }: {
   course: Course | null;
   trilhas: TrilhaOption[];
+  categories: Option[];
+  instructors: Option[];
   onSave: (input: CourseInput) => Promise<void>;
   onCancel: () => void;
 }) {
   const [form, setForm] = useState(() => initialForm(course));
+  const [meta, setMeta] = useState(() => initialMeta(course));
   const [lessons, setLessons] = useState(() => initialLessons(course));
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -75,7 +99,13 @@ export function CourseForm({
       description: form.description,
       image: form.image,
       priceCents,
-      trilhaId: form.trilhaId === '' ? null : Number(form.trilhaId),
+      trilhaId: toId(form.trilhaId),
+      categoryId: toId(meta.categoryId),
+      instructorId: toId(meta.instructorId),
+      level: meta.level,
+      // Meio-dia local: a data não muda de dia ao virar UTC.
+      publishedAt:
+        meta.publishedAt === '' ? undefined : new Date(`${meta.publishedAt}T12:00:00`).toISOString(),
       lessons: parsedLessons,
     };
   }
@@ -184,6 +214,13 @@ export function CourseForm({
               </select>
             </div>
           </div>
+
+          <CourseMetaFields
+            value={meta}
+            onChange={setMeta}
+            categories={categories}
+            instructors={instructors}
+          />
 
           <LessonsFields lessons={lessons} onChange={setLessons} />
 

@@ -7,15 +7,20 @@ import { coursesApi, type Course, type CourseInput } from '@/lib/api';
 import { formatCount } from '@/lib/format';
 import { FormErrors } from './FormErrors';
 import { CourseForm, type TrilhaOption } from './courses/CourseForm';
+import type { Option } from './courses/CourseMetaFields';
 import { CoursesTable } from './courses/CoursesTable';
 
 /** CRUD de cursos: junta o formulário (criar/editar) e a tabela. */
 export function CoursesManager({
   courses,
   trilhas,
+  categories,
+  instructors,
 }: {
   courses: Course[];
   trilhas: TrilhaOption[];
+  categories: Option[];
+  instructors: Option[];
 }) {
   const router = useRouter();
 
@@ -82,6 +87,8 @@ export function CoursesManager({
           key={formKey}
           course={editing}
           trilhas={trilhas}
+          categories={categories}
+          instructors={instructors}
           onSave={handleSave}
           onCancel={() => openForm(null)}
         />

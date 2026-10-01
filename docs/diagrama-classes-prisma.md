@@ -7,7 +7,7 @@ Este documento tem duas partes:
    (`docs/Plataforma de cursos.pdf`), dizendo qual campo do projeto cobre cada
    campo do PDF e em que etapa entra o que ainda falta.
 
-Atualizado na etapa 9 (30/09/2026). As etapas 10 a 14 atualizam este arquivo a
+Atualizado na etapa 10 (30/09/2026). As etapas 10 a 14 atualizam este arquivo a
 cada mudança no schema.
 
 ## 1. Schema atual
@@ -25,6 +25,21 @@ classDiagram
     ADMIN
   }
 
+  class CourseLevel {
+    <<enumeration>>
+    INICIANTE
+    INTERMEDIARIO
+    AVANCADO
+  }
+
+  class Category {
+    Int id
+    String name
+    String description
+    DateTime createdAt
+    DateTime updatedAt
+  }
+
   class User {
     Int id
     String email
@@ -39,6 +54,7 @@ classDiagram
     Int id
     String title
     String description
+    Int? categoryId
     DateTime createdAt
     DateTime updatedAt
   }
@@ -50,6 +66,10 @@ classDiagram
     String image
     Int priceCents
     Int? trilhaId
+    Int? instructorId
+    Int? categoryId
+    CourseLevel level
+    DateTime publishedAt
     DateTime createdAt
     DateTime updatedAt
   }
@@ -70,6 +90,10 @@ classDiagram
   }
 
   User --> Role : role
+  Course --> CourseLevel : level
+  User "0..1" <-- "0..*" Course : instrui
+  Category "0..1" <-- "0..*" Course : classifica
+  Category "0..1" <-- "0..*" Trilha : organiza
   Trilha "0..1" <-- "0..*" Course : agrupa
   Course "1" <-- "0..*" Lesson : contém
   User "1" <-- "0..*" Enrollment : faz
@@ -84,6 +108,11 @@ Restrições que valem hoje:
 - `Lesson` é única por `(courseId, order)`; `duration` é em minutos.
 - Apagar um curso apaga as aulas e as matrículas dele; apagar uma trilha só deixa
   os cursos dela sem trilha.
+- `Category.name` é único. Apagar uma categoria só deixa os cursos e as trilhas
+  dela sem categoria; apagar um usuário instrutor só deixa os cursos dele sem
+  instrutor.
+- `Course.level` é `INICIANTE` por padrão; `Course.publishedAt` é a data de
+  agora, se não for informada.
 
 ## 2. Conferência com o LAB03
 
@@ -109,9 +138,9 @@ em Assinaturas vira uma coluna só; `ValorPago` é um valor em `Decimal`, não F
 
 | LAB03 | Projeto | Situação |
 | --- | --- | --- |
-| ID_Categoria (PK) | `Category.id` | etapa 10 |
-| Nome (Unique) | `Category.name` (`@unique`) | etapa 10 |
-| Descricao | `Category.description` | etapa 10 |
+| ID_Categoria (PK) | `Category.id` | existe |
+| Nome (Unique) | `Category.name` (`@unique`) | existe |
+| Descricao | `Category.description` | existe |
 
 ### Cursos → `Course`
 
@@ -120,10 +149,10 @@ em Assinaturas vira uma coluna só; `ValorPago` é um valor em `Decimal`, não F
 | ID_Curso (PK) | `Course.id` | existe |
 | Titulo | `Course.title` | existe |
 | Descricao | `Course.description` | existe |
-| ID_Instrutor (FK Usuarios) | `Course.instructorId` → `User` (opcional) | etapa 10 |
-| ID_Categoria (FK Categorias) | `Course.categoryId` → `Category` | etapa 10 |
-| Nivel | `Course.level` (`INICIANTE`, `INTERMEDIARIO`, `AVANCADO`) | etapa 10 |
-| DataPublicacao | `Course.publishedAt` | etapa 10 |
+| ID_Instrutor (FK Usuarios) | `Course.instructorId` → `User` (opcional) | existe |
+| ID_Categoria (FK Categorias) | `Course.categoryId` → `Category` | existe |
+| Nivel | `Course.level` (`INICIANTE`, `INTERMEDIARIO`, `AVANCADO`) | existe |
+| DataPublicacao | `Course.publishedAt` | existe |
 | TotalAulas | `Course.totalLessons` (gravado, recalculado pela API) | etapa 11 |
 | TotalHoras | `Course.totalHours` (`Decimal`, 2 casas, recalculado pela API) | etapa 11 |
 
@@ -188,7 +217,7 @@ A mais no projeto: `image`, `priceCents` (preço só do ADMIN), `createdAt` e
 | ID_Trilha (PK) | `Trilha.id` | existe |
 | Titulo | `Trilha.title` | existe |
 | Descricao | `Trilha.description` | existe |
-| ID_Categoria (FK Categorias) | `Trilha.categoryId` → `Category` | etapa 10 |
+| ID_Categoria (FK Categorias) | `Trilha.categoryId` → `Category` | existe |
 
 ### Trilhas_Cursos → `TrilhaCourse`
 
@@ -245,8 +274,7 @@ A mais no projeto: `image`, `priceCents` (preço só do ADMIN), `createdAt` e
 
 | Situação | Campos |
 | --- | --- |
-| existe | 19 |
-| etapa 10 | 8 |
+| existe | 27 |
 | etapa 11 | 9 |
 | etapa 12 | 3 |
 | etapa 14 | 34 |

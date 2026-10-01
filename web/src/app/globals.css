@@ -516,6 +516,22 @@ pre {
   font-size: var(--text-lg);
 }
 
+/* Trilhas de uma categoria: lista simples, uma por linha, com a contagem à direita. */
+.category-trilhas {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.category-trilhas li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
 .back-link {
   display: inline-flex;
   align-items: center;

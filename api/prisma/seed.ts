@@ -2,12 +2,13 @@ import 'dotenv/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
-import { Role } from '../src/generated/prisma/enums';
+import { CourseLevel, Role } from '../src/generated/prisma/enums';
 
 /**
  * Popula o banco com o catálogo do trabalho-n2 (as trilhas de `Trilhas.tsx`, os
  * cursos de `Home.tsx` e o conteúdo programático de `CourseDetails.tsx`) e com
- * três usuários de demonstração (um ADMIN). Portado de `web/prisma/seed.ts`.
+ * quatro usuários de demonstração (um ADMIN, um instrutor). Também as
+ * categorias, com o nível e o instrutor dos cursos. Portado de `web/prisma/seed.ts`.
  *
  * Usuários: upsert por e-mail com `update: {}`. Quem já existe não é alterado
  * (nem nome, nem senha); quem não existe é criado com a senha em bcrypt.
@@ -21,12 +22,29 @@ const CONTEUDO_PROGRAMATICO = [
   { title: 'Projeto Prático', duration: 120 },
 ];
 
+// LAB03, Categorias. Cursos e trilhas apontam para elas pelo nome.
+const CATEGORIAS = [
+  {
+    name: 'Desenvolvimento Frontend',
+    description: 'Interfaces, navegador e as ferramentas do lado do cliente.',
+  },
+  {
+    name: 'Desenvolvimento Backend',
+    description: 'Servidores, APIs, bancos de dados e arquitetura.',
+  },
+];
+
 const TRILHAS = [
   {
     title: 'Trilha Frontend',
     description: 'HTML, CSS, JS, React e muito mais.',
+    categoria: 'Desenvolvimento Frontend',
   },
-  { title: 'Trilha Backend', description: 'Node.js, Bancos de Dados e APIs.' },
+  {
+    title: 'Trilha Backend',
+    description: 'Node.js, Bancos de Dados e APIs.',
+    categoria: 'Desenvolvimento Backend',
+  },
 ];
 
 const CURSOS = [
@@ -36,6 +54,9 @@ const CURSOS = [
     image: '/covers/react.svg',
     priceCents: 9_700,
     trilha: 'Trilha Frontend',
+    categoria: 'Desenvolvimento Frontend',
+    level: CourseLevel.INICIANTE,
+    instrutor: 'instrutor@perero.com',
   },
   {
     title: 'TypeScript Avançado',
@@ -43,6 +64,9 @@ const CURSOS = [
     image: '/covers/typescript.svg',
     priceCents: 14_700,
     trilha: 'Trilha Frontend',
+    categoria: 'Desenvolvimento Frontend',
+    level: CourseLevel.AVANCADO,
+    instrutor: 'instrutor@perero.com',
   },
   {
     title: 'Design Patterns',
@@ -50,6 +74,9 @@ const CURSOS = [
     image: '/covers/design-patterns.svg',
     priceCents: 19_700,
     trilha: 'Trilha Backend',
+    categoria: 'Desenvolvimento Backend',
+    level: CourseLevel.INTERMEDIARIO,
+    instrutor: null,
   },
 ];
 
@@ -64,6 +91,12 @@ const USUARIOS = [
   },
   { email: 'aluno@perero.com', name: 'Aluno Demo', password: 'senha123' },
   { email: 'joao@email.com', name: 'João Silva', password: 'senha123' },
+  // Instrutor de dois cursos. O perfil INSTRUTOR chega na etapa 13; até lá é USER.
+  {
+    email: 'instrutor@perero.com',
+    name: 'Instrutor Demo',
+    password: 'senha123',
+  },
 ];
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -75,36 +108,57 @@ const prisma = new PrismaClient({
 
 async function main() {
   let criados = 0;
+  const usuariosPorEmail = new Map<string, number>();
   for (const usuario of USUARIOS) {
     const existente = await prisma.user.findUnique({
       where: { email: usuario.email },
     });
     const hash = await bcrypt.hash(usuario.password, await bcrypt.genSalt());
-    await prisma.user.upsert({
+    const salvo = await prisma.user.upsert({
       where: { email: usuario.email },
       update: {},
       create: { ...usuario, password: hash },
     });
+    usuariosPorEmail.set(salvo.email, salvo.id);
     if (!existente) criados++;
   }
 
+  const categoriasPorNome = new Map<string, number>();
+  for (const categoria of CATEGORIAS) {
+    const salva = await prisma.category.upsert({
+      where: { name: categoria.name },
+      update: { description: categoria.description },
+      create: categoria,
+    });
+    categoriasPorNome.set(salva.name, salva.id);
+  }
+
   const trilhasPorTitulo = new Map<string, number>();
-  for (const trilha of TRILHAS) {
+  for (const { categoria, ...trilha } of TRILHAS) {
+    const dados = {
+      ...trilha,
+      categoryId: categoriasPorNome.get(categoria) ?? null,
+    };
     const existente = await prisma.trilha.findFirst({
       where: { title: trilha.title },
     });
     const salva = existente
       ? await prisma.trilha.update({
           where: { id: existente.id },
-          data: trilha,
+          data: dados,
         })
-      : await prisma.trilha.create({ data: trilha });
+      : await prisma.trilha.create({ data: dados });
     trilhasPorTitulo.set(salva.title, salva.id);
   }
 
   for (const curso of CURSOS) {
-    const { trilha, ...dados } = curso;
+    const { trilha, categoria, instrutor, ...campos } = curso;
     const trilhaId = trilhasPorTitulo.get(trilha) ?? null;
+    const dados = {
+      ...campos,
+      categoryId: categoriasPorNome.get(categoria) ?? null,
+      instructorId: instrutor ? (usuariosPorEmail.get(instrutor) ?? null) : null,
+    };
     const existente = await prisma.course.findFirst({
       where: { title: dados.title },
     });
@@ -129,15 +183,16 @@ async function main() {
     }
   }
 
-  const [usuarios, trilhas, cursos, aulas] = await Promise.all([
+  const [usuarios, categorias, trilhas, cursos, aulas] = await Promise.all([
     prisma.user.count(),
+    prisma.category.count(),
     prisma.trilha.count(),
     prisma.course.count(),
     prisma.lesson.count(),
   ]);
 
   console.log(
-    `Seed concluído: ${criados} usuário(s) novo(s); no banco: ${usuarios} usuários, ${trilhas} trilhas, ${cursos} cursos, ${aulas} aulas.`,
+    `Seed concluído: ${criados} usuário(s) novo(s); no banco: ${usuarios} usuários, ${categorias} categorias, ${trilhas} trilhas, ${cursos} cursos, ${aulas} aulas.`,
   );
 }
 

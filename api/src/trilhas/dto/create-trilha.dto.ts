@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreateTrilhaDto {
   @ApiProperty({
@@ -19,4 +26,18 @@ export class CreateTrilhaDto {
   @IsString({ message: 'description deve ser um texto' })
   @IsNotEmpty({ message: 'description não pode ser vazia' })
   description: string;
+
+  /** LAB03, Trilhas.ID_Categoria. `null` ou omitido deixa sem categoria. */
+  @ApiProperty({
+    example: 1,
+    description:
+      'ID da categoria; null ou omitido deixa a trilha sem categoria',
+    required: false,
+    nullable: true,
+    type: Number,
+  })
+  @IsOptional()
+  @IsInt({ message: 'categoryId deve ser um número inteiro' })
+  @Min(1, { message: 'categoryId deve ser um id válido' })
+  categoryId?: number | null;
 }

@@ -87,6 +87,7 @@ Contas do seed (senha `senha123`, dados de demonstração; usuário que já exis
 | `admin@perero.com` | `ADMIN` |
 | `aluno@perero.com` | `USER`  |
 | `joao@email.com`   | `USER`  |
+| `instrutor@perero.com` | `USER` (instrutor de dois cursos; o perfil INSTRUTOR chega na etapa 13) |
 
 Todo cadastro novo nasce `USER`. Uma conta só vira `ADMIN` pelo seed ou pelo Prisma
 Studio: nenhuma rota aceita `role` no corpo.
@@ -105,15 +106,16 @@ geradores rodam com o CLI local: `npx nest generate ...` dentro de `api/`. Sem
 | `POST /users`                                 | público (cadastro); não aceita `role`                |
 | `GET /users[/:id]`                            | qualquer usuário logado (como no PDF)                |
 | `PATCH`, `DELETE /users/:id`                  | a própria conta, ou ADMIN                            |
-| `GET /trilhas[/:id]`, `GET /courses[/:id]`    | público (catálogo)                                   |
-| `POST`, `PATCH`, `DELETE` de trilhas e cursos | só ADMIN                                             |
+| `GET /categories[/:id]`, `GET /trilhas[/:id]`, `GET /courses[/:id]` | público (catálogo); `GET /courses` filtra por `?categoryId=` e `?trilhaId=` |
+| `POST`, `PATCH`, `DELETE` de categorias, trilhas e cursos | só ADMIN |
 | `POST /enrollments`                           | qualquer usuário logado; a matrícula é do dono do token |
 | `GET /enrollments[/:id]`, `DELETE /enrollments/:id` | USER: só as próprias; ADMIN: todas             |
 
 - A senha é gravada com bcrypt e nunca sai nas respostas.
 - Erros: dados inválidos ou campo extra no corpo → 400; id não numérico → 400;
   registro inexistente → 404; e-mail repetido ou matrícula duplicada → 409;
-  referência a trilha ou curso inexistente → 400.
+  nome de categoria repetido → 409; referência a trilha, curso, categoria ou
+  instrutor inexistente → 400.
 - Sem login → 401; logado sem permissão → 403. O perfil vem do token: trocar o
   perfil de uma conta só vale depois de um novo login (até 1h).
 - CORS liberado só para o frontend (`http://localhost:3001`).
@@ -123,7 +125,8 @@ geradores rodam com o CLI local: `npx nest generate ...` dentro de `api/`. Sem
 
 Scripts (dentro de `api/`): `npm run start:dev`, `npm run build`,
 `npm run typecheck`, `npm run lint`, `npm test`, `npm run db:seed`,
-`npm run db:studio`.
+`npm run db:studio`, `npm run conferencia:lab03` (confere a tabela LAB03 → schema
+em `docs/diagrama-classes-prisma.md`).
 
 ## web/ — frontend Next.js
 
@@ -141,13 +144,16 @@ Todo HTTP passa por [`web/src/lib/api-client.ts`](web/src/lib/api-client.ts), o 
 | Rota                  | O que é                                                   |
 | --------------------- | --------------------------------------------------------- |
 | `/`                   | Catálogo de cursos                                        |
-| `/curso/[id]`         | Detalhe do curso, conteúdo programático e matrícula       |
+| `/curso/[id]`         | Detalhe do curso (nível, categoria, instrutor, publicação), conteúdo programático e matrícula |
+| `/categorias`         | Categorias                                                |
+| `/categorias/[id]`    | Cursos e trilhas de uma categoria                         |
 | `/trilhas`            | Trilhas de aprendizado                                    |
 | `/trilhas/[id]`       | Cursos de uma trilha                                      |
 | `/login`, `/cadastro` | Login (`POST /auth/login`) e cadastro (`POST /users`)     |
 | `/admin/usuarios`     | CRUD de usuários                                          |
-| `/admin/cursos`       | CRUD de cursos, com trilha e aulas                        |
-| `/admin/trilhas`      | CRUD de trilhas                                           |
+| `/admin/cursos`       | CRUD de cursos, com trilha, categoria, nível, instrutor e aulas |
+| `/admin/categorias`   | CRUD de categorias                                        |
+| `/admin/trilhas`      | CRUD de trilhas, com categoria                            |
 | `/admin/matriculas`   | Consulta e cancelamento de matrículas                     |
 
 Scripts (dentro de `web/`): `npm run dev` (porta 3001), `npm run build`,

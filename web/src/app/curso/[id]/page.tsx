@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Award, Clock, Users } from 'lucide-react';
 import { coursesApi } from '@/lib/api';
 import { handlePageError } from '@/lib/server-session';
-import { formatCount, formatDuration, formatPrice } from '@/lib/format';
+import { formatCount, formatDay, formatDuration, formatLevel, formatPrice } from '@/lib/format';
 import { EnrollButton } from '@/components/EnrollButton';
 
 export const dynamic = 'force-dynamic';
@@ -35,6 +35,18 @@ export default async function CourseDetailsPage({ params }: PageProps<'/curso/[i
               </p>
             )}
             <p className="page-lead">{course.description}</p>
+            <ul className="meta-list mt-2">
+              <li>{formatLevel(course.level)}</li>
+              {course.category && (
+                <li>
+                  <Link href={`/categorias/${course.category.id}`}>{course.category.name}</Link>
+                </li>
+              )}
+              {course.instructor && (
+                <li>Instrutor: {course.instructor.name ?? course.instructor.email}</li>
+              )}
+              <li>Publicado em {formatDay(course.publishedAt)}</li>
+            </ul>
           </header>
 
           <h2 className="section-title">Conteúdo programático</h2>

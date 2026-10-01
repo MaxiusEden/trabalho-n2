@@ -27,7 +27,14 @@ export default async function TrilhaDetailsPage({ params }: PageProps<'/trilhas/
       <header className="page-header">
         <h1 className="page-title">{trilha.title}</h1>
         <p className="page-lead">{trilha.description}</p>
-        <p className="page-meta">{formatCount(trilha._count.courses, 'curso', 'cursos')}</p>
+        <ul className="meta-list">
+          <li>{formatCount(trilha._count.courses, 'curso', 'cursos')}</li>
+          {trilha.category && (
+            <li>
+              <Link href={`/categorias/${trilha.category.id}`}>{trilha.category.name}</Link>
+            </li>
+          )}
+        </ul>
       </header>
 
       {trilha.courses.length === 0 ? (

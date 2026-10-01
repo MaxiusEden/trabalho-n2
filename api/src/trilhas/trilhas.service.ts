@@ -10,8 +10,10 @@ const trilhaSelect = {
   id: true,
   title: true,
   description: true,
+  categoryId: true,
   createdAt: true,
   updatedAt: true,
+  category: { select: { id: true, name: true } },
   _count: { select: { courses: true } },
 } satisfies Prisma.TrilhaSelect;
 

@@ -11,9 +11,15 @@ const courseSelect = {
   image: true,
   priceCents: true,
   trilhaId: true,
+  categoryId: true,
+  instructorId: true,
+  level: true,
+  publishedAt: true,
   createdAt: true,
   updatedAt: true,
   trilha: { select: { id: true, title: true } },
+  category: { select: { id: true, name: true } },
+  instructor: { select: { id: true, name: true, email: true } },
   lessons: {
     orderBy: { order: 'asc' },
     select: { id: true, title: true, duration: true, order: true },
@@ -44,18 +50,19 @@ export class CoursesService {
         image: createCourseDto.image,
         priceCents: createCourseDto.priceCents,
         trilhaId: createCourseDto.trilhaId ?? null,
+        categoryId: createCourseDto.categoryId ?? null,
+        instructorId: createCourseDto.instructorId ?? null,
+        level: createCourseDto.level,
+        publishedAt: createCourseDto.publishedAt,
         lessons: { create: toLessonRows(createCourseDto.lessons ?? []) },
       },
       select: courseSelect,
     });
   }
 
-  findAll(options: { trilhaId?: number } = {}) {
+  findAll(options: { trilhaId?: number; categoryId?: number } = {}) {
     return this.prisma.course.findMany({
-      where:
-        options.trilhaId === undefined
-          ? undefined
-          : { trilhaId: options.trilhaId },
+      where: { trilhaId: options.trilhaId, categoryId: options.categoryId },
       select: courseSelect,
       orderBy: { id: 'asc' },
     });
@@ -73,7 +80,10 @@ export class CoursesService {
   // `undefined` significa "campo não enviado" e é preservado. Trocar a lista de
   // aulas é uma única operação aninhada: o curso nunca fica pela metade.
   update(id: number, updateCourseDto: UpdateCourseDto) {
-    const data: Prisma.CourseUpdateInput = {};
+    // As FKs vão como colunas (`null` desvincula): um id que não existe vira
+    // violação de FK (P2003 → 400, como no create). Com `connect`, viraria
+    // P2025 e o filtro responderia 404, como se o curso não existisse.
+    const data: Prisma.CourseUncheckedUpdateInput = {};
 
     if (updateCourseDto.title !== undefined) data.title = updateCourseDto.title;
     if (updateCourseDto.description !== undefined)
@@ -81,13 +91,15 @@ export class CoursesService {
     if (updateCourseDto.image !== undefined) data.image = updateCourseDto.image;
     if (updateCourseDto.priceCents !== undefined)
       data.priceCents = updateCourseDto.priceCents;
-
-    if (updateCourseDto.trilhaId !== undefined) {
-      data.trilha =
-        updateCourseDto.trilhaId === null
-          ? { disconnect: true }
-          : { connect: { id: updateCourseDto.trilhaId } };
-    }
+    if (updateCourseDto.level !== undefined) data.level = updateCourseDto.level;
+    if (updateCourseDto.publishedAt !== undefined)
+      data.publishedAt = updateCourseDto.publishedAt;
+    if (updateCourseDto.trilhaId !== undefined)
+      data.trilhaId = updateCourseDto.trilhaId;
+    if (updateCourseDto.categoryId !== undefined)
+      data.categoryId = updateCourseDto.categoryId;
+    if (updateCourseDto.instructorId !== undefined)
+      data.instructorId = updateCourseDto.instructorId;
 
     if (updateCourseDto.lessons !== undefined) {
       data.lessons = {
