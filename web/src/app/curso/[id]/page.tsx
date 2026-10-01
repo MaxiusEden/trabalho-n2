@@ -3,7 +3,15 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Award, Clock, Users } from 'lucide-react';
 import { coursesApi } from '@/lib/api';
 import { handlePageError } from '@/lib/server-session';
-import { formatCount, formatDay, formatDuration, formatLevel, formatPrice } from '@/lib/format';
+import {
+  formatContentType,
+  formatCount,
+  formatDay,
+  formatDuration,
+  formatHours,
+  formatLevel,
+  formatPrice,
+} from '@/lib/format';
 import { EnrollButton } from '@/components/EnrollButton';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +24,9 @@ export default async function CourseDetailsPage({ params }: PageProps<'/curso/[i
 
   const course = await coursesApi.get(courseId).catch(handlePageError);
 
-  const totalMinutes = course.lessons.reduce((sum, lesson) => sum + lesson.duration, 0);
+  // Os totais vêm gravados pela API (TotalAulas, TotalHoras); a página não recalcula.
+  // Os minutos só servem de base para a barra de cada aula.
+  const totalMinutes = Number(course.totalHours) * 60;
 
   return (
     <div className="container">
@@ -51,30 +61,49 @@ export default async function CourseDetailsPage({ params }: PageProps<'/curso/[i
 
           <h2 className="section-title">Conteúdo programático</h2>
           <ul className="meta-list">
-            <li>{formatCount(course.lessons.length, 'aula', 'aulas')}</li>
-            <li>{formatDuration(totalMinutes)} no total</li>
+            <li>{formatCount(course.modules.length, 'módulo', 'módulos')}</li>
+            <li>{formatCount(course.totalLessons, 'aula', 'aulas')}</li>
+            <li>{formatHours(course.totalHours)} no total</li>
           </ul>
 
-          {course.lessons.length === 0 ? (
+          {course.modules.length === 0 ? (
             <p className="text-muted mt-3">Este curso ainda não tem aulas cadastradas.</p>
           ) : (
-            <ol className="lesson-list">
-              {course.lessons.map((lesson, index) => (
-                <li key={lesson.id}>
-                  <span className="lesson-list__index">{index + 1}</span>
-                  <span>{lesson.title}</span>
-                  <span className="lesson-list__duration">{formatDuration(lesson.duration)}</span>
-                  {/* Complemento visual da duração escrita ao lado: parte da aula no total do curso. */}
-                  <span className="lesson-list__bar" aria-hidden="true">
-                    <span
-                      style={{
-                        width: `${totalMinutes > 0 ? (lesson.duration / totalMinutes) * 100 : 0}%`,
-                      }}
-                    />
-                  </span>
-                </li>
-              ))}
-            </ol>
+            course.modules.map((module, m) => (
+              <section
+                key={module.id}
+                className="module-block"
+                aria-labelledby={`modulo-${module.id}`}
+              >
+                <h3 id={`modulo-${module.id}`} className="module-block__title">
+                  Módulo {m + 1}: {module.title}
+                </h3>
+                {module.lessons.length === 0 ? (
+                  <p className="text-muted small mb-0">Este módulo ainda não tem aulas.</p>
+                ) : (
+                  <ol className="lesson-list">
+                    {module.lessons.map((lesson, index) => (
+                      <li key={lesson.id}>
+                        <span className="lesson-list__index">{index + 1}</span>
+                        <span>
+                          {lesson.title}
+                          <span className="lesson-list__type">{formatContentType(lesson.contentType)}</span>
+                        </span>
+                        <span className="lesson-list__duration">{formatDuration(lesson.duration)}</span>
+                        {/* Complemento visual da duração escrita ao lado: parte da aula no total do curso. */}
+                        <span className="lesson-list__bar" aria-hidden="true">
+                          <span
+                            style={{
+                              width: `${totalMinutes > 0 ? Math.min(100, (lesson.duration / totalMinutes) * 100) : 0}%`,
+                            }}
+                          />
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </section>
+            ))
           )}
         </div>
 

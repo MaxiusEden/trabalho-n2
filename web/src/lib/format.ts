@@ -34,6 +34,19 @@ export function formatLevel(level: keyof typeof LEVEL_LABELS): string {
   return LEVEL_LABELS[level];
 }
 
+/** Horas decimais gravadas pela API ("3.33") → "3,33 h". */
+export function formatHours(hours: string | number): string {
+  return `${Number(hours).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} h`;
+}
+
+const CONTENT_TYPE_LABELS = { VIDEO: 'Vídeo', TEXTO: 'Texto', QUIZ: 'Quiz' } as const;
+
+export const CONTENT_TYPES = Object.keys(CONTENT_TYPE_LABELS) as (keyof typeof CONTENT_TYPE_LABELS)[];
+
+export function formatContentType(type: keyof typeof CONTENT_TYPE_LABELS): string {
+  return CONTENT_TYPE_LABELS[type];
+}
+
 export function formatDuration(minutes: number): string {
   return `${minutes} min`;
 }

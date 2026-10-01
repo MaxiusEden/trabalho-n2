@@ -10,6 +10,8 @@ type Token = string | null | undefined;
 
 export type CourseLevel = 'INICIANTE' | 'INTERMEDIARIO' | 'AVANCADO';
 
+export type ContentType = 'VIDEO' | 'TEXTO' | 'QUIZ';
+
 export type Category = {
   id: number;
   name: string;
@@ -49,11 +51,22 @@ export type TrilhaDetail = Trilha & {
     description: string;
     image: string;
     priceCents: number;
-    lessons: { duration: number }[];
+    totalLessons: number;
+    totalHours: string;
   }[];
 };
 
-export type Lesson = { id: number; title: string; duration: number; order: number };
+export type Lesson = {
+  id: number;
+  title: string;
+  contentType: ContentType;
+  contentUrl: string | null;
+  /** Minutos. */
+  duration: number;
+  order: number;
+};
+
+export type CourseModule = { id: number; title: string; order: number; lessons: Lesson[] };
 
 export type Course = {
   id: number;
@@ -66,12 +79,16 @@ export type Course = {
   instructorId: number | null;
   level: CourseLevel;
   publishedAt: string;
+  /** Gravados pela API ao salvar módulos e aulas; a tela só lê. */
+  totalLessons: number;
+  /** Horas decimais, 2 casas (o Decimal do Prisma chega como texto, ex.: "3.33"). */
+  totalHours: string;
   createdAt: string;
   updatedAt: string;
   trilha: { id: number; title: string } | null;
   category: { id: number; name: string } | null;
   instructor: { id: number; name: string | null; email: string } | null;
-  lessons: Lesson[];
+  modules: CourseModule[];
   _count: { enrollments: number };
 };
 
@@ -110,7 +127,16 @@ export type CourseInput = {
   level: CourseLevel;
   /** ISO 8601. Omitido na criação, a API usa a data de agora. */
   publishedAt?: string;
-  lessons: { title: string; duration: number }[];
+};
+
+export type ModuleInput = { title: string; order?: number };
+
+export type LessonInput = {
+  title: string;
+  contentType: ContentType;
+  contentUrl: string | null;
+  duration: number;
+  order?: number;
 };
 
 export type UserInput = { email: string; name: string; password: string };
@@ -159,6 +185,23 @@ export const coursesApi = {
   update: (id: number, input: CourseInput) =>
     apiFetch<Course>(`/courses/${id}`, { method: 'PATCH', json: input }),
   remove: (id: number) => apiFetch<Course>(`/courses/${id}`, { method: 'DELETE' }),
+};
+
+/** Módulos e aulas: rotas próprias; cada escrita recalcula os totais do curso na API. */
+export const modulesApi = {
+  create: (courseId: number, input: ModuleInput) =>
+    apiFetch<CourseModule>(`/courses/${courseId}/modules`, { method: 'POST', json: input }),
+  update: (id: number, input: Partial<ModuleInput>) =>
+    apiFetch<CourseModule>(`/modules/${id}`, { method: 'PATCH', json: input }),
+  remove: (id: number) => apiFetch<CourseModule>(`/modules/${id}`, { method: 'DELETE' }),
+};
+
+export const lessonsApi = {
+  create: (moduleId: number, input: LessonInput) =>
+    apiFetch<Lesson>(`/modules/${moduleId}/lessons`, { method: 'POST', json: input }),
+  update: (id: number, input: Partial<LessonInput>) =>
+    apiFetch<Lesson>(`/lessons/${id}`, { method: 'PATCH', json: input }),
+  remove: (id: number) => apiFetch<Lesson>(`/lessons/${id}`, { method: 'DELETE' }),
 };
 
 export const enrollmentsApi = {

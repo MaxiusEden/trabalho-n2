@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '../generated/prisma/client';
-import { CreateCourseDto, LessonInputDto } from './dto/create-course.dto';
+import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 
 const courseSelect = {
@@ -15,33 +15,41 @@ const courseSelect = {
   instructorId: true,
   level: true,
   publishedAt: true,
+  totalLessons: true,
+  totalHours: true,
   createdAt: true,
   updatedAt: true,
   trilha: { select: { id: true, title: true } },
   category: { select: { id: true, name: true } },
   instructor: { select: { id: true, name: true, email: true } },
-  lessons: {
+  // Curso > Módulo > Aula, cada nível na ordem gravada.
+  modules: {
     orderBy: { order: 'asc' },
-    select: { id: true, title: true, duration: true, order: true },
+    select: {
+      id: true,
+      title: true,
+      order: true,
+      lessons: {
+        orderBy: { order: 'asc' },
+        select: {
+          id: true,
+          title: true,
+          contentType: true,
+          contentUrl: true,
+          duration: true,
+          order: true,
+        },
+      },
+    },
   },
   _count: { select: { enrollments: true } },
 } satisfies Prisma.CourseSelect;
-
-// A ordem das aulas é a posição no array, o que nunca colide com
-// `@@unique([courseId, order])`.
-function toLessonRows(lessons: LessonInputDto[]) {
-  return lessons.map((lesson, index) => ({
-    title: lesson.title,
-    duration: lesson.duration,
-    order: index + 1,
-  }));
-}
 
 @Injectable()
 export class CoursesService {
   constructor(private prisma: PrismaService) {}
 
-  // Cria o curso junto com o conteúdo programático.
+  // Cria o curso sem módulos (totais 0); módulos e aulas têm rotas próprias.
   create(createCourseDto: CreateCourseDto) {
     return this.prisma.course.create({
       data: {
@@ -54,7 +62,6 @@ export class CoursesService {
         instructorId: createCourseDto.instructorId ?? null,
         level: createCourseDto.level,
         publishedAt: createCourseDto.publishedAt,
-        lessons: { create: toLessonRows(createCourseDto.lessons ?? []) },
       },
       select: courseSelect,
     });
@@ -77,8 +84,8 @@ export class CoursesService {
     return course;
   }
 
-  // `undefined` significa "campo não enviado" e é preservado. Trocar a lista de
-  // aulas é uma única operação aninhada: o curso nunca fica pela metade.
+  // `undefined` significa "campo não enviado" e é preservado. Módulos e aulas
+  // não passam por aqui: têm rotas próprias, que recalculam os totais.
   update(id: number, updateCourseDto: UpdateCourseDto) {
     // As FKs vão como colunas (`null` desvincula): um id que não existe vira
     // violação de FK (P2003 → 400, como no create). Com `connect`, viraria
@@ -101,13 +108,6 @@ export class CoursesService {
     if (updateCourseDto.instructorId !== undefined)
       data.instructorId = updateCourseDto.instructorId;
 
-    if (updateCourseDto.lessons !== undefined) {
-      data.lessons = {
-        deleteMany: {},
-        create: toLessonRows(updateCourseDto.lessons),
-      };
-    }
-
     return this.prisma.course.update({
       where: { id },
       data,
@@ -115,7 +115,7 @@ export class CoursesService {
     });
   }
 
-  // As aulas e matrículas do curso somem junto, via `onDelete: Cascade`.
+  // Módulos, aulas e matrículas do curso somem junto, via `onDelete: Cascade`.
   remove(id: number) {
     return this.prisma.course.delete({ where: { id }, select: courseSelect });
   }

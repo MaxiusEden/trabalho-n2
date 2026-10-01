@@ -7,7 +7,7 @@ Este documento tem duas partes:
    (`docs/Plataforma de cursos.pdf`), dizendo qual campo do projeto cobre cada
    campo do PDF e em que etapa entra o que ainda falta.
 
-Atualizado na etapa 10 (30/09/2026). As etapas 10 a 14 atualizam este arquivo a
+Atualizado na etapa 11 (01/10/2026). As etapas 10 a 14 atualizam este arquivo a
 cada mudança no schema.
 
 ## 1. Schema atual
@@ -30,6 +30,13 @@ classDiagram
     INICIANTE
     INTERMEDIARIO
     AVANCADO
+  }
+
+  class ContentType {
+    <<enumeration>>
+    VIDEO
+    TEXTO
+    QUIZ
   }
 
   class Category {
@@ -70,16 +77,29 @@ classDiagram
     Int? categoryId
     CourseLevel level
     DateTime publishedAt
+    Int totalLessons
+    Decimal totalHours
+    DateTime createdAt
+    DateTime updatedAt
+  }
+
+  class Module {
+    Int id
+    Int courseId
+    String title
+    Int order
     DateTime createdAt
     DateTime updatedAt
   }
 
   class Lesson {
     Int id
+    Int moduleId
     String title
+    ContentType contentType
+    String? contentUrl
     Int duration
     Int order
-    Int courseId
   }
 
   class Enrollment {
@@ -95,7 +115,9 @@ classDiagram
   Category "0..1" <-- "0..*" Course : classifica
   Category "0..1" <-- "0..*" Trilha : organiza
   Trilha "0..1" <-- "0..*" Course : agrupa
-  Course "1" <-- "0..*" Lesson : contém
+  Course "1" <-- "0..*" Module : contém
+  Module "1" <-- "0..*" Lesson : contém
+  Lesson --> ContentType : contentType
   User "1" <-- "0..*" Enrollment : faz
   Course "1" <-- "0..*" Enrollment : recebe
 ```
@@ -105,8 +127,13 @@ Restrições que valem hoje:
 - `User.email` é único.
 - `Enrollment` é único por `(userId, courseId)`: o banco impede matrícula
   duplicada.
-- `Lesson` é única por `(courseId, order)`; `duration` é em minutos.
-- Apagar um curso apaga as aulas e as matrículas dele; apagar uma trilha só deixa
+- `Module` é único por `(courseId, order)` e `Lesson` por `(moduleId, order)`;
+  `duration` é em minutos.
+- `Course.totalLessons` e `Course.totalHours` são gravados: a API recalcula os
+  dois na mesma transação em que cria, altera ou exclui um módulo ou uma aula.
+  `totalHours` é `Decimal(6, 2)`: a soma dos minutos dividida por 60, com 2 casas.
+- Apagar um curso apaga os módulos, as aulas e as matrículas dele; apagar um
+  módulo apaga as aulas dele; apagar uma trilha só deixa
   os cursos dela sem trilha.
 - `Category.name` é único. Apagar uma categoria só deixa os cursos e as trilhas
   dela sem categoria; apagar um usuário instrutor só deixa os cursos dele sem
@@ -153,30 +180,30 @@ em Assinaturas vira uma coluna só; `ValorPago` é um valor em `Decimal`, não F
 | ID_Categoria (FK Categorias) | `Course.categoryId` → `Category` | existe |
 | Nivel | `Course.level` (`INICIANTE`, `INTERMEDIARIO`, `AVANCADO`) | existe |
 | DataPublicacao | `Course.publishedAt` | existe |
-| TotalAulas | `Course.totalLessons` (gravado, recalculado pela API) | etapa 11 |
-| TotalHoras | `Course.totalHours` (`Decimal`, 2 casas, recalculado pela API) | etapa 11 |
+| TotalAulas | `Course.totalLessons` (gravado, recalculado pela API) | existe |
+| TotalHoras | `Course.totalHours` (`Decimal`, 2 casas, recalculado pela API) | existe |
 
 A mais no projeto: `image`, `priceCents` (preço só do ADMIN), `createdAt` e
-`updatedAt`. O `trilhaId` sai na etapa 12 (trilha N:N).
+`updatedAt`. As aulas não ficam mais direto no curso: Curso > Módulo > Aula. O `trilhaId` sai na etapa 12 (trilha N:N).
 
 ### Modulos → `Module`
 
 | LAB03 | Projeto | Situação |
 | --- | --- | --- |
-| ID_Modulo (PK) | `Module.id` | etapa 11 |
-| ID_Curso (FK Cursos) | `Module.courseId` | etapa 11 |
-| Titulo | `Module.title` | etapa 11 |
-| Ordem | `Module.order` (único por curso) | etapa 11 |
+| ID_Modulo (PK) | `Module.id` | existe |
+| ID_Curso (FK Cursos) | `Module.courseId` | existe |
+| Titulo | `Module.title` | existe |
+| Ordem | `Module.order` (único por curso) | existe |
 
 ### Aulas → `Lesson`
 
 | LAB03 | Projeto | Situação |
 | --- | --- | --- |
 | ID_Aula (PK) | `Lesson.id` | existe |
-| ID_Modulo (FK Modulos) | `Lesson.moduleId` (substitui `courseId`) | etapa 11 |
+| ID_Modulo (FK Modulos) | `Lesson.moduleId` (substitui `courseId`) | existe |
 | Titulo | `Lesson.title` | existe |
-| TipoConteudo | `Lesson.contentType` (`VIDEO`, `TEXTO`, `QUIZ`) | etapa 11 |
-| URL_Conteudo | `Lesson.contentUrl` (opcional) | etapa 11 |
+| TipoConteudo | `Lesson.contentType` (`VIDEO`, `TEXTO`, `QUIZ`) | existe |
+| URL_Conteudo | `Lesson.contentUrl` (opcional) | existe |
 | DuracaoMinutos | `Lesson.duration` (minutos) | existe |
 | Ordem | `Lesson.order` (passa a ser único por módulo) | existe |
 
@@ -274,8 +301,7 @@ A mais no projeto: `image`, `priceCents` (preço só do ADMIN), `createdAt` e
 
 | Situação | Campos |
 | --- | --- |
-| existe | 27 |
-| etapa 11 | 9 |
+| existe | 36 |
 | etapa 12 | 3 |
 | etapa 14 | 34 |
 | **total** | **73** |

@@ -1,48 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { CourseLevel } from '../../generated/prisma/enums';
 import {
-  ArrayMaxSize,
-  IsArray,
   IsDateString,
   IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
-  Max,
   MaxLength,
   Min,
-  ValidateNested,
 } from 'class-validator';
-
-/** Aula do conteúdo programático. A ordem vem da posição no array. */
-export class LessonInputDto {
-  @ApiProperty({
-    example: 'Introdução à Tecnologia',
-    description: 'Título da aula (até 120 caracteres)',
-    maxLength: 120,
-  })
-  @IsString({ message: 'lessons.title deve ser um texto' })
-  @IsNotEmpty({ message: 'lessons.title não pode ser vazio' })
-  @MaxLength(120, {
-    message: 'lessons.title deve ter no máximo 120 caracteres',
-  })
-  title: string;
-
-  @ApiProperty({
-    example: 10,
-    description: 'Duração em minutos (1 a 10000)',
-    minimum: 1,
-    maximum: 10_000,
-  })
-  @IsInt({ message: 'lessons.duration deve ser um número inteiro de minutos' })
-  @Min(1, { message: 'lessons.duration deve ser de no mínimo 1 minuto' })
-  @Max(10_000, {
-    message: 'lessons.duration deve ser de no máximo 10000 minutos',
-  })
-  duration: number;
-}
 
 export class CreateCourseDto {
   @ApiProperty({
@@ -142,16 +109,4 @@ export class CreateCourseDto {
     { message: 'publishedAt deve ser uma data ISO 8601 válida' },
   )
   publishedAt?: string;
-
-  @ApiProperty({
-    description: 'Conteúdo programático; a ordem das aulas é a do array',
-    required: false,
-    type: [LessonInputDto],
-  })
-  @IsOptional()
-  @IsArray({ message: 'lessons deve ser uma lista' })
-  @ArrayMaxSize(100, { message: 'lessons deve ter no máximo 100 aulas' })
-  @ValidateNested({ each: true })
-  @Type(() => LessonInputDto)
-  lessons?: LessonInputDto[];
 }

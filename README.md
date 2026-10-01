@@ -108,14 +108,20 @@ geradores rodam com o CLI local: `npx nest generate ...` dentro de `api/`. Sem
 | `PATCH`, `DELETE /users/:id`                  | a própria conta, ou ADMIN                            |
 | `GET /categories[/:id]`, `GET /trilhas[/:id]`, `GET /courses[/:id]` | público (catálogo); `GET /courses` filtra por `?categoryId=` e `?trilhaId=` |
 | `POST`, `PATCH`, `DELETE` de categorias, trilhas e cursos | só ADMIN |
+| `POST /courses/:courseId/modules`, `PATCH` e `DELETE /modules/:id` | só ADMIN |
+| `POST /modules/:moduleId/lessons`, `PATCH` e `DELETE /lessons/:id` | só ADMIN |
 | `POST /enrollments`                           | qualquer usuário logado; a matrícula é do dono do token |
 | `GET /enrollments[/:id]`, `DELETE /enrollments/:id` | USER: só as próprias; ADMIN: todas             |
 
 - A senha é gravada com bcrypt e nunca sai nas respostas.
 - Erros: dados inválidos ou campo extra no corpo → 400; id não numérico → 400;
   registro inexistente → 404; e-mail repetido ou matrícula duplicada → 409;
-  nome de categoria repetido → 409; referência a trilha, curso, categoria ou
+  nome de categoria repetido ou posição de módulo/aula já ocupada → 409; referência a trilha, curso, categoria ou
   instrutor inexistente → 400.
+- Curso > Módulo > Aula. Os módulos e as aulas têm rotas próprias e chegam no
+  `GET /courses/:id`. `totalLessons` e `totalHours` (horas decimais, 2 casas)
+  ficam gravados no curso: a API recalcula os dois na mesma transação em que cria,
+  altera ou exclui um módulo ou uma aula; a leitura só lê o valor gravado.
 - Sem login → 401; logado sem permissão → 403. O perfil vem do token: trocar o
   perfil de uma conta só vale depois de um novo login (até 1h).
 - CORS liberado só para o frontend (`http://localhost:3001`).
@@ -144,14 +150,14 @@ Todo HTTP passa por [`web/src/lib/api-client.ts`](web/src/lib/api-client.ts), o 
 | Rota                  | O que é                                                   |
 | --------------------- | --------------------------------------------------------- |
 | `/`                   | Catálogo de cursos                                        |
-| `/curso/[id]`         | Detalhe do curso (nível, categoria, instrutor, publicação), conteúdo programático e matrícula |
+| `/curso/[id]`         | Detalhe do curso (nível, categoria, instrutor, publicação), aulas agrupadas por módulo, totais e matrícula |
 | `/categorias`         | Categorias                                                |
 | `/categorias/[id]`    | Cursos e trilhas de uma categoria                         |
 | `/trilhas`            | Trilhas de aprendizado                                    |
 | `/trilhas/[id]`       | Cursos de uma trilha                                      |
 | `/login`, `/cadastro` | Login (`POST /auth/login`) e cadastro (`POST /users`)     |
 | `/admin/usuarios`     | CRUD de usuários                                          |
-| `/admin/cursos`       | CRUD de cursos, com trilha, categoria, nível, instrutor e aulas |
+| `/admin/cursos`       | CRUD de cursos (trilha, categoria, nível, instrutor) e, no curso em edição, os módulos e as aulas, com os totais só leitura |
 | `/admin/categorias`   | CRUD de categorias                                        |
 | `/admin/trilhas`      | CRUD de trilhas, com categoria                            |
 | `/admin/matriculas`   | Consulta e cancelamento de matrículas                     |
@@ -161,18 +167,26 @@ Scripts (dentro de `web/`): `npm run dev` (porta 3001), `npm run build`,
 
 ## Modelo de dados
 
+O diagrama completo, e a conferência campo a campo com o LAB03, ficam em
+[`docs/diagrama-classes-prisma.md`](docs/diagrama-classes-prisma.md).
+
 ```
-User 1──n Enrollment n──1 Course n──1 Trilha
-                              │
-                              └──n Lesson
+User 1──n Enrollment n──1 Course n──0..1 Trilha
+                           Course n──0..1 Category (a Trilha também tem categoria)
+                           Course n──0..1 User (instrutor)
+                           Course 1──n Module 1──n Lesson
 ```
 
-- `User.email` é único.
+- `User.email` e `Category.name` são únicos.
 - `Enrollment` tem índice único em `(userId, courseId)`: o banco impede matrícula duplicada.
-- `Lesson` tem índice único em `(courseId, order)`; a ordem vem da posição no formulário.
-- Apagar um curso apaga aulas e matrículas em cascata.
-- Apagar uma trilha **não** apaga os cursos: eles ficam com `trilhaId = null`.
-- O número de cursos de uma trilha é derivado da contagem, nunca armazenado.
+- `Module` é único em `(courseId, order)` e `Lesson` em `(moduleId, order)`.
+- Apagar um curso apaga módulos, aulas e matrículas em cascata; apagar um módulo
+  apaga as aulas dele.
+- Apagar uma trilha, uma categoria ou o usuário instrutor **não** apaga os cursos:
+  eles só ficam sem o vínculo.
+- O número de cursos de uma trilha é derivado da contagem, nunca armazenado. Já
+  `totalLessons` e `totalHours` ficam gravados no curso (LAB03), recalculados pela
+  API a cada escrita de módulo ou aula.
 
 ## VS Code
 

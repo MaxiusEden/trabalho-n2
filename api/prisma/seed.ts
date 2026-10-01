@@ -2,7 +2,8 @@ import 'dotenv/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
-import { CourseLevel, Role } from '../src/generated/prisma/enums';
+import { ContentType, CourseLevel, Role } from '../src/generated/prisma/enums';
+import { recalculateCourseTotals } from '../src/courses/course-totals';
 
 /**
  * Popula o banco com o catálogo do trabalho-n2 (as trilhas de `Trilhas.tsx`, os
@@ -12,15 +13,51 @@ import { CourseLevel, Role } from '../src/generated/prisma/enums';
  *
  * Usuários: upsert por e-mail com `update: {}`. Quem já existe não é alterado
  * (nem nome, nem senha); quem não existe é criado com a senha em bcrypt.
- * Cursos semeados: numa nova execução, as aulas deles são recriadas.
+ * Cursos semeados: numa nova execução, os módulos e as aulas deles são
+ * recriados, e os totais (TotalAulas, TotalHoras) regravados.
  */
 
-const CONTEUDO_PROGRAMATICO = [
-  { title: 'Introdução à Tecnologia', duration: 10 },
-  { title: 'Configurando o Ambiente', duration: 25 },
-  { title: 'Primeiros Passos e Conceitos', duration: 45 },
-  { title: 'Projeto Prático', duration: 120 },
+// Curso > Módulo > Aula (LAB03). Cada curso semeado recebe estes módulos; a
+// URL de cada aula leva o nome do curso. Duração em minutos.
+const MODULOS = [
+  {
+    title: 'Fundamentos',
+    aulas: [
+      { title: 'Introdução à Tecnologia', duration: 10, contentType: ContentType.VIDEO },
+      { title: 'Configurando o Ambiente', duration: 25, contentType: ContentType.TEXTO },
+    ],
+  },
+  {
+    title: 'Prática',
+    aulas: [
+      { title: 'Primeiros Passos e Conceitos', duration: 45, contentType: ContentType.VIDEO },
+      { title: 'Projeto Prático', duration: 120, contentType: ContentType.QUIZ },
+    ],
+  },
 ];
+
+// "TypeScript Avançado" → "typescript-avancado"
+const slug = (texto: string) =>
+  texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
+function modulosDoCurso(titulo: string) {
+  return MODULOS.map((modulo, m) => ({
+    title: modulo.title,
+    order: m + 1,
+    lessons: {
+      create: modulo.aulas.map((aula, a) => ({
+        ...aula,
+        order: a + 1,
+        contentUrl: `https://example.com/cursos/${slug(titulo)}/modulo-${m + 1}/aula-${a + 1}`,
+      })),
+    },
+  }));
+}
 
 // LAB03, Categorias. Cursos e trilhas apontam para elas pelo nome.
 const CATEGORIAS = [
@@ -162,37 +199,34 @@ async function main() {
     const existente = await prisma.course.findFirst({
       where: { title: dados.title },
     });
-    const aulas = CONTEUDO_PROGRAMATICO.map((aula, index) => ({
-      ...aula,
-      order: index + 1,
-    }));
+    const modules = modulosDoCurso(dados.title);
 
-    if (existente) {
-      await prisma.course.update({
-        where: { id: existente.id },
-        data: {
-          ...dados,
-          trilhaId,
-          lessons: { deleteMany: {}, create: aulas },
-        },
-      });
-    } else {
-      await prisma.course.create({
-        data: { ...dados, trilhaId, lessons: { create: aulas } },
-      });
-    }
+    // Os módulos (e as aulas) dos cursos semeados são recriados a cada execução.
+    const salvo = existente
+      ? await prisma.course.update({
+          where: { id: existente.id },
+          data: { ...dados, trilhaId, modules: { deleteMany: {}, create: modules } },
+        })
+      : await prisma.course.create({
+          data: { ...dados, trilhaId, modules: { create: modules } },
+        });
+
+    // Os totais gravados saem da mesma função que a API usa.
+    await recalculateCourseTotals(prisma, salvo.id);
   }
 
-  const [usuarios, categorias, trilhas, cursos, aulas] = await Promise.all([
-    prisma.user.count(),
-    prisma.category.count(),
-    prisma.trilha.count(),
-    prisma.course.count(),
-    prisma.lesson.count(),
-  ]);
+  const [usuarios, categorias, trilhas, cursos, modulos, aulas] =
+    await Promise.all([
+      prisma.user.count(),
+      prisma.category.count(),
+      prisma.trilha.count(),
+      prisma.course.count(),
+      prisma.module.count(),
+      prisma.lesson.count(),
+    ]);
 
   console.log(
-    `Seed concluído: ${criados} usuário(s) novo(s); no banco: ${usuarios} usuários, ${categorias} categorias, ${trilhas} trilhas, ${cursos} cursos, ${aulas} aulas.`,
+    `Seed concluído: ${criados} usuário(s) novo(s); no banco: ${usuarios} usuários, ${categorias} categorias, ${trilhas} trilhas, ${cursos} cursos, ${modulos} módulos, ${aulas} aulas.`,
   );
 }
 

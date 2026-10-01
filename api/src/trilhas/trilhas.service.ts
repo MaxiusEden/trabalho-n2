@@ -27,7 +27,8 @@ const trilhaDetailSelect = {
       description: true,
       image: true,
       priceCents: true,
-      lessons: { select: { duration: true } },
+      totalLessons: true,
+      totalHours: true,
     },
   },
 } satisfies Prisma.TrilhaSelect;

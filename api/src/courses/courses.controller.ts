@@ -78,7 +78,7 @@ export class CoursesController {
   @Roles(Role.ADMIN)
   @Patch(':id')
   @ApiOperation({
-    summary: 'Atualizar um curso (lessons, se enviado, substitui as aulas)',
+    summary: 'Atualizar um curso (módulos e aulas têm rotas próprias)',
   })
   @ApiResponse({ status: 200, description: 'Curso atualizado.' })
   @ApiResponse({

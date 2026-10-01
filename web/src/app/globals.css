@@ -674,6 +674,63 @@ pre {
   background-color: var(--color-primary);
 }
 
+/* Tipo de conteúdo ao lado do título da aula (Vídeo, Texto, Quiz) */
+.lesson-list__type {
+  margin-left: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Curso > Módulo > Aula na página do curso */
+.module-block {
+  margin-top: 1.5rem;
+}
+
+.module-block__title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+/* Admin: totais só leitura, módulos e linhas de aula do editor */
+.course-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-muted);
+}
+
+.course-totals dt {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.course-totals dd {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.module-editor {
+  padding: 1rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.module-editor__lessons {
+  margin-top: 0.75rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--color-border);
+}
+
+.lesson-editor + .lesson-editor {
+  margin-top: 0.75rem;
+}
+
 .purchase-card {
   top: 1.5rem;
 }

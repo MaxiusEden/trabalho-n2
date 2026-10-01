@@ -20,7 +20,8 @@ export default async function AdminCursosPage() {
     <div>
       <h1 className="admin-title">Cursos</h1>
       <p className="text-muted mb-4">
-        Cadastre cursos com preço, trilha, categoria, nível, instrutor e a lista de aulas.
+        Cadastre cursos com preço, trilha, categoria, nível e instrutor. Ao editar um curso, os
+        módulos e as aulas dele aparecem abaixo.
       </p>
 
       <CoursesManager

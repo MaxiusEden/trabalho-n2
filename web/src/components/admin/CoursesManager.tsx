@@ -9,8 +9,12 @@ import { FormErrors } from './FormErrors';
 import { CourseForm, type TrilhaOption } from './courses/CourseForm';
 import type { Option } from './courses/CourseMetaFields';
 import { CoursesTable } from './courses/CoursesTable';
+import { ModulesEditor } from './courses/ModulesEditor';
 
-/** CRUD de cursos: junta o formulário (criar/editar) e a tabela. */
+/**
+ * CRUD de cursos: o formulário (criar/editar), a tabela e, para o curso em
+ * edição, o editor de módulos e aulas.
+ */
 export function CoursesManager({
   courses,
   trilhas,
@@ -24,20 +28,23 @@ export function CoursesManager({
 }) {
   const router = useRouter();
 
-  const [editing, setEditing] = useState<Course | null>(null);
-  // Trocar a `key` recomeça o formulário (depois de salvar, cancelar ou ao editar outro curso).
+  // Guarda só o id: o curso em si vem da lista, que o `router.refresh()` atualiza
+  // depois de cada escrita (inclusive os totais recalculados pela API).
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const editing = courses.find((course) => course.id === editingId) ?? null;
+  // Trocar a `key` recomeça o formulário (ao cancelar ou ao editar outro curso).
   const [formKey, setFormKey] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  function openForm(course: Course | null) {
-    setEditing(course);
+  function openForm(courseId: number | null) {
+    setEditingId(courseId);
     setFormKey((key) => key + 1);
   }
 
   function startEdit(course: Course) {
-    openForm(course);
+    openForm(course.id);
     setErrors([]);
     setNotice(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -46,20 +53,21 @@ export function CoursesManager({
   async function handleSave(input: CourseInput) {
     setNotice(null);
     if (editing === null) {
-      await coursesApi.create(input);
-      setNotice('Curso criado com sucesso.');
+      // O curso novo já abre em edição, para receber módulos e aulas.
+      const created = await coursesApi.create(input);
+      openForm(created.id);
+      setNotice('Curso criado. Agora cadastre os módulos e as aulas abaixo.');
     } else {
       await coursesApi.update(editing.id, input);
       setNotice('Curso atualizado com sucesso.');
     }
-    openForm(null);
     router.refresh();
   }
 
   async function handleDelete(course: Course) {
     if (
       !window.confirm(
-        `Excluir o curso "${course.title}"? As aulas dele e ${formatCount(course._count.enrollments, 'matrícula', 'matrículas')} também serão removidas.`,
+        `Excluir o curso "${course.title}"? Os módulos, as aulas e ${formatCount(course._count.enrollments, 'matrícula', 'matrículas')} também serão removidas.`,
       )
     )
       return;
@@ -70,7 +78,7 @@ export function CoursesManager({
 
     try {
       await coursesApi.remove(course.id);
-      if (editing?.id === course.id) openForm(null);
+      if (editingId === course.id) openForm(null);
       setNotice('Curso excluído com sucesso.');
       router.refresh();
     } catch (caught) {
@@ -84,7 +92,8 @@ export function CoursesManager({
     <div className="row g-4">
       <div className="col-12 col-xl-5">
         <CourseForm
-          key={formKey}
+          // Muda quando o curso recém-criado chega na lista, para o formulário nascer dele.
+          key={`${formKey}-${editing?.id ?? 'novo'}`}
           course={editing}
           trilhas={trilhas}
           categories={categories}
@@ -100,6 +109,12 @@ export function CoursesManager({
 
         <CoursesTable courses={courses} busy={busy} onEdit={startEdit} onDelete={handleDelete} />
       </div>
+
+      {editing && (
+        <div className="col-12">
+          <ModulesEditor course={editing} />
+        </div>
+      )}
     </div>
   );
 }

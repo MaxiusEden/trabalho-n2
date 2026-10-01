@@ -22,6 +22,13 @@ enum CourseLevel {
   AVANCADO
 }
 
+/// Tipo de conteúdo da aula (LAB03, Aulas.TipoConteudo).
+enum ContentType {
+  VIDEO
+  TEXTO
+  QUIZ
+}
+
 /// Usuário: o model do PDF "CRUD - NestJS". Acréscimos: as relações
 /// `enrollments` e `coursesTaught`, que não criam coluna, e o `role` (etapa 8).
 model User {
@@ -80,13 +87,18 @@ model Course {
   categoryId   Int?
   level        CourseLevel @default(INICIANTE)
   publishedAt  DateTime    @default(now())
+  /// Gravados, não calculados na leitura: a api/ recalcula na mesma transação
+  /// em que cria, altera ou exclui um módulo ou uma aula do curso.
+  totalLessons Int         @default(0)
+  /// Horas decimais com 2 casas, a partir da soma dos minutos das aulas.
+  totalHours   Decimal     @default(0) @db.Decimal(6, 2)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
   trilha      Trilha?      @relation(fields: [trilhaId], references: [id], onDelete: SetNull)
   instructor  User?        @relation("CourseInstructor", fields: [instructorId], references: [id], onDelete: SetNull)
   category    Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  lessons     Lesson[]
+  modules     Module[]
   enrollments Enrollment[]
 
   @@index([trilhaId])
@@ -94,18 +106,37 @@ model Course {
   @@index([categoryId])
 }
 
-/// Aula do conteúdo programático de um curso.
-model Lesson {
-  id       Int    @id @default(autoincrement())
-  title    String
-  duration Int // duração em minutos
-  order    Int // posição da aula dentro do curso
-  courseId Int
+/// Módulo de um curso (LAB03, Modulos). A ordem é única dentro do curso.
+model Module {
+  id        Int      @id @default(autoincrement())
+  courseId  Int
+  title     String
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
 
   @@unique([courseId, order])
   @@index([courseId])
+}
+
+/// Aula de um módulo (LAB03, Aulas). A ordem é única dentro do módulo.
+model Lesson {
+  id          Int         @id @default(autoincrement())
+  moduleId    Int
+  title       String
+  contentType ContentType @default(VIDEO)
+  /// Opcional (o PDF não marca not null); o seed preenche.
+  contentUrl  String?
+  duration    Int // duração em minutos
+  order       Int // posição da aula dentro do módulo
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, order])
+  @@index([moduleId])
 }
 
 /// Matrícula de um usuário em um curso. O índice único impede matrícula

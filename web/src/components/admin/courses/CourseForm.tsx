@@ -5,8 +5,6 @@ import { toMessages } from '@/lib/api-client';
 import type { Course, CourseInput } from '@/lib/api';
 import { parsePriceToCents } from '@/lib/format';
 import { FormErrors } from '../FormErrors';
-import { LessonsFields } from './LessonsFields';
-import { newLessonKey, type LessonField } from './lesson-field';
 import { CourseMetaFields, type CourseMeta, type Option } from './CourseMetaFields';
 
 export type TrilhaOption = { id: number; title: string };
@@ -39,16 +37,9 @@ function initialMeta(course: Course | null): CourseMeta {
 
 const toId = (value: string) => (value === '' ? null : Number(value));
 
-function initialLessons(course: Course | null): LessonField[] {
-  return (course?.lessons ?? []).map((lesson) => ({
-    key: newLessonKey(),
-    title: lesson.title,
-    duration: String(lesson.duration),
-  }));
-}
-
 /**
- * Formulário de criar ou editar curso. O estado nasce do `course` recebido;
+ * Formulário de criar ou editar os dados do curso. Módulos e aulas ficam no
+ * `ModulesEditor`, com rotas próprias. O estado nasce do `course` recebido;
  * quem usa troca a `key` para recomeçar o formulário.
  */
 export function CourseForm({
@@ -68,7 +59,6 @@ export function CourseForm({
 }) {
   const [form, setForm] = useState(() => initialForm(course));
   const [meta, setMeta] = useState(() => initialMeta(course));
-  const [lessons, setLessons] = useState(() => initialLessons(course));
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -84,16 +74,6 @@ export function CourseForm({
       return null;
     }
 
-    const parsedLessons = [];
-    for (const [index, lesson] of lessons.entries()) {
-      const duration = Number(lesson.duration);
-      if (!Number.isInteger(duration) || duration < 1) {
-        setErrors([`A duração da aula ${index + 1} deve ser um número inteiro de minutos`]);
-        return null;
-      }
-      parsedLessons.push({ title: lesson.title, duration });
-    }
-
     return {
       title: form.title,
       description: form.description,
@@ -106,7 +86,6 @@ export function CourseForm({
       // Meio-dia local: a data não muda de dia ao virar UTC.
       publishedAt:
         meta.publishedAt === '' ? undefined : new Date(`${meta.publishedAt}T12:00:00`).toISOString(),
-      lessons: parsedLessons,
     };
   }
 
@@ -222,15 +201,13 @@ export function CourseForm({
             instructors={instructors}
           />
 
-          <LessonsFields lessons={lessons} onChange={setLessons} />
-
           <div className="d-flex gap-2">
             <button type="submit" className="btn btn-primary flex-grow-1" disabled={busy}>
               {course === null ? 'Criar' : 'Salvar'}
             </button>
             {course !== null && (
               <button type="button" className="btn btn-outline-secondary" onClick={onCancel}>
-                Cancelar
+                Fechar
               </button>
             )}
           </div>
