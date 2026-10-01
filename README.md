@@ -9,6 +9,10 @@ web/    Next.js (App Router), o frontend; consome a api/
 docs/   PDFs da disciplina e diagramas
 ```
 
+Este trabalho continua o LAB03 (`docs/Plataforma de cursos.pdf`). A conferência
+campo a campo entre o modelo de dados do LAB03 e o schema da API fica em
+[`docs/diagrama-classes-prisma.md`](docs/diagrama-classes-prisma.md).
+
 | Pasta  | Porta | Endereço                                       |
 | ------ | ----- | ---------------------------------------------- |
 | `api/` | 3000  | <http://localhost:3000/api> (Swagger)          |
